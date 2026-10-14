@@ -1,0 +1,31 @@
+:root {
+  --hover-color: rgba(187 187 187 / 93%);
+  --seleted-item-color: rgb(194, 212, 255);
+  --color-schedule-0: rgba(255, 255, 255, 0.169);
+  --color-schedule-1: rgba(72, 63, 63, 0.138);
+  --border-color: rgb(209 209 209);
+  --button-color: #0f2d69;
+}
+
+.break-slots {
+  background-color: rgba(255, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background-color: var(--button-color);
+  border-color: var(--button-color);
+}
+.btn-primary:active,
+.btn-primary:focus {
+  background-color: var(--button-color);
+  border-color: var(--button-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--seleted-item-color);
+  border-color: var(--seleted-item-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--button-color);
+}

@@ -1,0 +1,75 @@
+/* stylelint-disable */
+/* Deactivating linter because we need to address the vuecal class */
+
+.vuecal {
+  --vuecal-secondary-color: #ffffff;
+  --vuecal-base-color: #000000;
+  --vuecal-contrast-color: #000000;
+  --vuecal-border-color: color-mix(in srgb, var(--vuecal-base-color) 40%, transparent);
+}
+
+/* Only show the name of the day without number */
+.vuecal__weekday-date {
+  display: none !important;
+}
+
+/* Don't highlight today */
+.vuecal__weekday.vuecal__weekday--today {
+  font-weight: normal;
+}
+
+/* Don't show actual time */
+.vuecal__now-line {
+  display: none !important;
+}
+
+/* left borders in (.vuecal__weekday) (.vuecal__cell::before) (.vuecal__schedule.schedule-0) to draw a border between days*/
+
+.vuecal__weekday {
+  border-left: 3px solid black !important;
+  border-bottom: 1px solid black !important;
+}
+
+/* to change cell color without affecting the horizontal lines of the time grip  */
+.vuecal__cell::before {
+  border-left: 3px solid black !important;
+}
+
+/* Border zwischen Tagen dicker */
+.vuecal__schedule.schedule-0 {
+  border-left: 3px solid black !important;
+  background-clip: padding-box;
+}
+
+/* Border zwischen Schedules */
+.vuecal__schedule {
+  border-left: 1px solid black !important;
+  background-clip: padding-box;
+}
+
+/* jeden zweiten schedule (pro Tag) einfärben */
+.vuecal__schedule:nth-of-type(even) {
+  background-color: var(--color-schedule-1);
+  background-clip: padding-box;
+}
+
+.vuecal__schedule:nth-of-type(odd) {
+  background-color: var(--color-schedule-0);
+  background-clip: padding-box;
+}
+
+/* Border zwischen den Tagen ist dicker */
+.vuecal__schedule.vuecal__schedule--heading.schedule-0 {
+  border-left: 3px solid black !important;
+}
+
+.vuecal__schedule.vuecal__schedule--heading {
+  background-color: var(--color-schedule-1);
+}
+
+/* Hebt die Schedule Überschrift hervor*/
+.vuecal__schedule.vuecal__schedule--heading.highlight {
+  background-color: rgba(74, 113, 240, 0.3);
+}
+
+/* stylelint-enable */

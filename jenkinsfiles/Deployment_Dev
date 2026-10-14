@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+  environment {
+    COMPOSE_PROJECT_NAME = "planlos-web-development"
+    CONTAINER_NAME       = "planlos-web-development"
+    IMAGE_TAG            = "development"
+    WEB_PORT             = "8008"
+    URL_BASE             = "/stundenplan/app-dev"
+    VITE_API_BASE_URL    = "/stundenplan/backend-dev/api/v1"
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build image') {
+      steps {
+        sh 'docker compose build'
+      }
+    }
+
+    stage('Release') {
+      when {
+        expression {
+          env.GIT_BRANCH == 'origin/development'
+        }
+      }
+      steps {
+        sh 'docker compose up -d --remove-orphans'
+      }
+    }
+  }
+}

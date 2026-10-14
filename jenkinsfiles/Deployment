@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+  environment {
+    COMPOSE_PROJECT_NAME = "planlos-web-release"
+    CONTAINER_NAME       = "planlos-web-release"
+    IMAGE_TAG            = "release"
+    WEB_PORT             = "8002"
+    URL_BASE             = "/stundenplan/app"
+    VITE_API_BASE_URL    = "/stundenplan/backend/api/v1"
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build image') {
+      steps {
+        sh 'docker compose build'
+      }
+    }
+
+    stage('Release') {
+      when {
+        expression {
+          env.GIT_BRANCH == 'origin/release'
+        }
+      }
+      steps {
+        sh 'docker compose up -d --remove-orphans'
+      }
+    }
+  }
+}

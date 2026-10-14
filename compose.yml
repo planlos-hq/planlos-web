@@ -1,0 +1,22 @@
+# PlanLos web frontend (static build served by nginx).
+# Configure via .env (see .env.example), then: docker compose up -d --build
+services:
+  web:
+    image: localhost/planlos-web:${IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME:-planlos-web}
+    build:
+      context: .
+      args:
+        URL_BASE: ${URL_BASE:-/}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+    restart: unless-stopped
+    environment:
+      # planlos-server as seen from the container (default: port 8004 on the host)
+      API_UPSTREAM: ${API_UPSTREAM:-http://host.docker.internal:8004}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${WEB_PORT:-8002}:80"
+    volumes:
+      # Info dialog content, editable without rebuilding (reload the page)
+      - ${SETTINGS_FILE:-./settings.yml}:/usr/share/nginx/html/settings.yml:ro

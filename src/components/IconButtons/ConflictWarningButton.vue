@@ -1,0 +1,79 @@
+<template>
+  <div class="button-wrapper">
+    <icon-button :size="size" class="icon-button">
+      <alert-triangle :size="size" class="icon-button" />
+    </icon-button>
+
+    <span v-if="conflictCount > 0" class="badge" :class="badgeClass">
+      {{ conflictCount }}
+    </span>
+  </div>
+</template>
+
+<script setup lang="ts">
+  import { AlertTriangle } from "lucide-vue-next";
+  import IconButton from "@/template/IconButton.vue";
+  import { computed } from "vue";
+
+  const props = defineProps<{
+    /**Größe des Icons in px */
+    size: number;
+
+    /**Anzahl der Konklikte*/
+    conflictCount: number;
+  }>();
+
+  const badgeClass = computed(() => {
+    if (props.conflictCount >= 20) return "critical";
+    if (props.conflictCount >= 5) return "warning";
+    return "normal";
+  });
+</script>
+
+<style scoped lang="css">
+  .icon-button {
+    padding: 1%;
+  }
+
+  .button-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .badge {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 50%;
+
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+
+    color: white;
+    background-color: #ffbc48;
+
+    margin-left: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .normal {
+    background-color: #ffbc48;
+  }
+
+  .warning {
+    background-color: #ef6c44;
+  }
+
+  .critical {
+    background-color: #991b1b;
+  }
+</style>

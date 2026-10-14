@@ -1,0 +1,24 @@
+# Content of the info dialogs in the bottom-right corner (Hilfe, Impressum, About).
+# Loaded at runtime: edit this file (or the one mounted via compose.yml) and
+# reload the page, no rebuild needed.
+#
+# text: shown as-is, line breaks are kept. Empty ("") hides it.
+# link: shown below the text. Empty ("") hides it.
+# Do not enter private addresses, phone numbers or names of team members.
+
+help:
+  text: "Dokumentation und Hilfe finden Sie unter folgendem Link:"
+  link: "" # e.g. URL of the PlanLos docs
+
+impressum:
+  text: "Das Impressum finden Sie unter folgendem Link:"
+  link: "" # e.g. the legal notice of the operating institution
+
+about:
+  text: "PlanLos – ein Open-Source-Wochenplaner für Hochschulen"
+  link: "https://github.com/planlos-hq"
+  # Images in public/ (e.g. "about/team.webp" -> public/about/team.webp)
+  # or absolute URLs. One is picked at random each time the dialog opens.
+  images: []
+  # Optional image shown instead with a 1 % chance
+  rare_image: ""
