@@ -109,6 +109,11 @@
               overflow: visible !important;
             }
 
+            /* html2canvas rendert den inset box-shadow der Zellen fehlerhaft als graue Fläche */
+            .vuecal__cell {
+              box-shadow: none !important;
+            }
+
             .vuecal__weekday,
             .vuecal__weekday-day {
               overflow: visible !important;
@@ -116,7 +121,7 @@
               max-width: none !important;
             }
 
-            /* UI-Overlays ausblenden, die sonst ins Bild lecken */
+            /* UI-Overlays ausblenden die ins Bild lecken */
             .side-bar, .modal-backdrop, .offcanvas-backdrop, .info-btn-container, .toast-container {
               display: none !important;
             }
