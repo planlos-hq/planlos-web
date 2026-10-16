@@ -45,3 +45,15 @@ export function mapLecturerKindToString(value: LecturerKind) {
       return "Lehrperson";
   }
 }
+
+/**
+ * Fehlercodes, die angezeigt werden, wenn keine Verbindung zum Server möglich ist.
+ */
+export enum ConnectionErrorCode {
+  /** Der Server ist nicht erreichbar (Netzwerkfehler, Server offline) */
+  ServerUnreachable = "PL-001",
+  /** Der Server antwortet mit einem 5xx-Status, z. B. weil die Datenbank nicht erreichbar ist */
+  ServerError = "PL-002",
+  /** Der Server antwortet, aber die Antwort ist kein gültiges JSON (z. B. Fehlerseite eines Proxys) */
+  InvalidResponse = "PL-003",
+}

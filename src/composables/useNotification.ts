@@ -1,4 +1,5 @@
 import { useToast } from "bootstrap-vue-next";
+import { ApiError } from "@/api/ApiError";
 
 let toast: ReturnType<typeof useToast> | undefined = undefined;
 
@@ -73,23 +74,29 @@ export function useNotification() {
 
     switch (response.status) {
       case 400:
-        throw new Error("400 - Eingabe unvollständig oder ungültig.");
+        throw new ApiError(response.status, "400 - Eingabe unvollständig oder ungültig.");
       case 403:
-        throw new Error(
+        throw new ApiError(
+          response.status,
           `403 - Zugriff verweigert! Nutzer ${errorData?.shib_username} ist nicht autorisiert.`
         );
       case 404:
-        throw new Error("404 - Ungültige ID oder Eintrag nicht gefunden.");
+        throw new ApiError(response.status, "404 - Ungültige ID oder Eintrag nicht gefunden.");
       case 409:
-        throw new Error(
+        throw new ApiError(
+          response.status,
           "409 - Es ist ein Konflikt aufgetreten. Überprüfen Sie, ob der Eintrag bereits existiert."
         );
       case 415:
-        throw new Error("415 - Das Datenformat wird nicht unterstützt.");
+        throw new ApiError(response.status, "415 - Das Datenformat wird nicht unterstützt.");
       case 500:
-        throw new Error("500 - Fehler beim Server. Bitte wenden Sie sich an Ihren Administrator!");
+        throw new ApiError(
+          response.status,
+          "500 - Fehler beim Server. Bitte wenden Sie sich an Ihren Administrator!"
+        );
       default:
-        throw new Error(
+        throw new ApiError(
+          response.status,
           `Ein unbekannter Fehler ist aufgetreten: (${response.status}). Bitte wenden Sie sich an Ihren Administrator!`
         );
     }

@@ -21,6 +21,7 @@ import type { TimeSlot } from "@/models/TimeSlot";
 import { useNotification } from "@/composables/useNotification";
 import { useTimeSlotStore } from "@/stores/timeSlotStore";
 import { useTemplateStore } from "@/stores/templateStore";
+import { useConnectionStore } from "@/stores/connectionStore";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -160,6 +161,12 @@ export async function getAllApplicationData() {
       templateStore.templateMap.set(template.id, template);
     });
   } catch (error) {
+    // Ohne Verbindung zum Server wird statt der Anwendung die Fehleransicht angezeigt
+    if (useConnectionStore().reportConnectionError(error)) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return;
+    }
     const e = error as Error;
     handleError(e, "Fehler beim initialen Laden der Daten!");
   }

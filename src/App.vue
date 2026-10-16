@@ -5,7 +5,8 @@
     Es funktioniert kein OnMounted, da dies außerhalb des Gültigkeitsbereiches liegen würde.
     -->
     <toast-init />
-    <router-view v-if="ready" />
+    <connection-error-view v-if="connectionStore.hasConnectionError" />
+    <router-view v-else-if="ready" />
   </b-app>
 </template>
 
@@ -15,6 +16,8 @@
   import { defineComponent, onMounted, ref } from "vue";
   import { useNotification } from "./composables/useNotification";
   import { useSettingsStore } from "./stores/settingsStore";
+  import { useConnectionStore } from "./stores/connectionStore";
+  import ConnectionErrorView from "./views/ConnectionErrorView.vue";
 
   const toastInit = defineComponent({
     setup() {
@@ -26,6 +29,7 @@
   });
 
   const settingsStore = useSettingsStore();
+  const connectionStore = useConnectionStore();
   const ready = ref(false);
 
   onMounted(async () => {
