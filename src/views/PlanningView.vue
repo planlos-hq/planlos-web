@@ -122,8 +122,14 @@
   );
 
   const calendarSchedules = computed(() => {
-    if (plannerSettings.value.tab !== Tab.COURSE) return [];
-    return studyGroupStore.schedules;
+    switch (plannerSettings.value.tab) {
+      case Tab.COURSE:
+        return studyGroupStore.schedules;
+      case Tab.DEGREEPROGRAM:
+        return studyGroupStore.degreeProgramSchedules;
+      default:
+        return [];
+    }
   });
 
   const breaks = computed(() => {
@@ -146,7 +152,7 @@
         id = roomStore.selectedRoomId;
         break;
       case Tab.DEGREEPROGRAM:
-        return [];
+        return vueCalEventStore.degreeProgramEvents;
       default:
         return [];
     }

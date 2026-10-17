@@ -7,12 +7,16 @@ import { mapStudyGroupUpdatesToApi } from "@/api/util";
 import { useNotification } from "@/composables/useNotification";
 import { useCourseStore } from "./courseStore";
 import { useSettingsStore } from "./settingsStore";
+import { useDegreeProgramStore } from "./degreeProgramStore";
 
 /**
  * Pinia Store für die Verwaltung von Studiengruppen
  *
  * @returns Ein Objekt mit:
  * - studyGroupList: Reaktive Liste aller Studiengruppen
+ * - schedules: Stundenpläne der in den Einstellungen ausgewählten Studiengruppen
+ * - degreeProgramSchedules: Stundenpläne aller Studiengruppen des ausgewählten Studiengangs
+ * - studyGroupsByDegreeProgram: Funktion zum Ermitteln aller Studiengruppen eines Studiengangs
  * - selectedStudyGroupId: Id der (in der Verwaltungsansicht) ausgewählten Studiengruppe
  * - selectedStudyGroup: Ermittelt die gewählte Studiengruppe anhand der selectedStudyGroupId
  * - createStudyGroup: Funktion zum Erstellen einer neuen Studiengruppe
@@ -28,6 +32,7 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
   const { showError, showSuccess, handleError } = useNotification();
 
   const settingsStore = useSettingsStore();
+  const degreeProgramStore = useDegreeProgramStore();
   const { plannerSettings } = storeToRefs(settingsStore);
 
   /**
@@ -108,6 +113,22 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
   }
 
   /**
+   * Wandelt Studiengruppen in Stundenpläne (Schedules) für VueCal um
+   *
+   * @param groups - Studiengruppen, für die je ein Stundenplan erzeugt wird
+   * @returns Eine Liste von Stundenplänen mit ID, Label und CSS-Klasse
+   */
+  function toSchedules(groups: StudyGroup[]) {
+    return groups.map((group, index) => ({
+      id: group.id,
+      label: `${group.degreeProgram.abbreviation}${group.semesterYear % 100}_${group.semesterSeason.slice(0, 1).toUpperCase()}`,
+      class: [`schedule-${index}`, highlightGroup(group) ? "highlight" : null]
+        .filter(c => c !== null)
+        .join(" "),
+    }));
+  }
+
+  /**
    * Erstellt eine gefilterte Liste von Stundenplänen basierend auf ausgewählten Studiengruppen
    *
    * @returns Eine Liste von Stundenplänen mit ID, Label und CSS-Klasse
@@ -117,13 +138,34 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
       .map(id => studyGroupMap.value.get(id))
       .filter(s => s !== undefined);
 
-    return selectedStudyGroupList.map((group, index) => ({
-      id: group.id,
-      label: `${group.degreeProgram.abbreviation}${group.semesterYear % 100}_${group.semesterSeason.slice(0, 1).toUpperCase()}`,
-      class: [`schedule-${index}`, highlightGroup(group) ? "highlight" : null]
-        .filter(c => c !== null)
-        .join(" "),
-    }));
+    return toSchedules(selectedStudyGroupList);
+  });
+
+  /**
+   * Ermittelt alle Studiengruppen eines Studiengangs, chronologisch sortiert
+   *
+   * @param degreeProgramId - eindeutige ID des Studiengangs
+   * @returns Liste der Studiengruppen des Studiengangs
+   */
+  const studyGroupsByDegreeProgram = computed(
+    () => (degreeProgramId: number) =>
+      studyGroupList.value
+        .filter(group => group.degreeProgram.id === degreeProgramId)
+        .sort(
+          (a, b) =>
+            a.semesterYear - b.semesterYear || a.semesterSeason.localeCompare(b.semesterSeason)
+        )
+  );
+
+  /**
+   * Erstellt die Stundenpläne aller Studiengruppen des ausgewählten Studiengangs
+   *
+   * @returns Eine Liste von Stundenplänen mit ID, Label und CSS-Klasse
+   */
+  const degreeProgramSchedules = computed(() => {
+    const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
+    if (degreeProgramId === null) return [];
+    return toSchedules(studyGroupsByDegreeProgram.value(degreeProgramId));
   });
 
   function highlightGroup(studyGroup: StudyGroup): boolean {
@@ -160,6 +202,8 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
     studyGroupMap,
     studyGroupList,
     schedules,
+    degreeProgramSchedules,
+    studyGroupsByDegreeProgram,
     selectedStudyGroupId,
     selectedStudyGroup,
     createStudyGroup,

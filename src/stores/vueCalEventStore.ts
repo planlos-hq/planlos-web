@@ -5,23 +5,29 @@ import type { VueCalEvent } from "@/models/VueCalEvent";
 import { useColorStore } from "./colorStore";
 import { useSettingsStore } from "./settingsStore";
 import { useResourceConflictStore } from "./resourceConflictsStore";
+import { useDegreeProgramStore } from "./degreeProgramStore";
+import { useStudyGroupStore } from "./studyGroupStore";
 
 /**
  * Pinia Store für die Verwaltung von VueCal Events
  *
  * @returns Ein Objekt mit:
  * - vueCalEventsList: Computed Liste aller VueCal Events, generiert aus Kursen, Zeitfenstern und Studiengruppen
+ * - degreeProgramEvents: Computed Liste der VueCal Events aller Studiengruppen des ausgewählten Studiengangs
  */
 export const useVueCalEventStore = defineStore("vueCalEvents", () => {
   const courseStore = useCourseStore();
   const colorStore = useColorStore();
   const settingsStore = useSettingsStore();
   const conflictsStore = useResourceConflictStore();
+  const degreeProgramStore = useDegreeProgramStore();
+  const studyGroupStore = useStudyGroupStore();
 
   const { plannerSettings } = storeToRefs(settingsStore);
 
   const cache = new Map<string, VueCalEvent>();
   const filteredCache = new Map<string, VueCalEvent>();
+  const degreeProgramCache = new Map<string, VueCalEvent>();
 
   /**
    * Gibt eine eindeutige Id zu einem VueCalEvent zurück.
@@ -59,19 +65,19 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
   }
 
   /**
-   * Liste der angezeigten Events im Kalender in der Planungsansicht
+   * Erzeugt für jede übergebene Studiengruppe die Events ihrer Veranstaltungen,
+   * jeweils einem eigenen Schedule (Spalte) zugeordnet.
+   * Nicht mehr benötigte Events werden aus dem Cache entfernt.
+   * @param studyGroupIds - Ids der Studiengruppen, deren Events erzeugt werden sollen
+   * @param targetCache - Cache, der zum cachen verwendet werden soll
+   * @returns Liste der Events
    */
-  const vueCalEventsList = computed(() => {
+  function buildScheduleEvents(studyGroupIds: number[], targetCache: Map<string, VueCalEvent>) {
     const activeEventIds = new Set<string>();
     const events: VueCalEvent[] = [];
     const white = "#FFFFFF";
 
-    if (plannerSettings.value.studyGroups.size === 0) {
-      cache.clear();
-      return [];
-    }
-
-    for (const studyGroup of [...plannerSettings.value.studyGroups]) {
+    for (const studyGroup of studyGroupIds) {
       const courses = courseStore.coursesByStudyGroup(studyGroup);
       for (const course of courses) {
         const color = course.color;
@@ -89,7 +95,7 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
               schedule: studyGroup,
               conflicts: conflictsStore.timeSlotConflictsMap.get(timeSlot.id) ?? [],
             },
-            cache,
+            targetCache,
             `${timeSlot.id}-${studyGroup}`
           );
           activeEventIds.add(getVueCalEventId(event));
@@ -99,13 +105,42 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
     }
 
     //Alte Events aus dem Cache leeren, die nicht mehr aktiv sind
-    for (const eventId of cache.keys()) {
+    for (const eventId of targetCache.keys()) {
       if (!activeEventIds.has(eventId)) {
-        cache.delete(eventId);
+        targetCache.delete(eventId);
       }
     }
 
     return events;
+  }
+
+  /**
+   * Liste der angezeigten Events im Kalender in der Planungsansicht
+   */
+  const vueCalEventsList = computed(() => {
+    if (plannerSettings.value.studyGroups.size === 0) {
+      cache.clear();
+      return [];
+    }
+
+    return buildScheduleEvents([...plannerSettings.value.studyGroups], cache);
+  });
+
+  /**
+   * Liste der Events aller Studiengruppen des ausgewählten Studiengangs,
+   * wobei jede Studiengruppe einen eigenen Schedule erhält.
+   */
+  const degreeProgramEvents = computed(() => {
+    const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
+    if (degreeProgramId === null) {
+      degreeProgramCache.clear();
+      return [];
+    }
+
+    const studyGroupIds = studyGroupStore
+      .studyGroupsByDegreeProgram(degreeProgramId)
+      .map(group => group.id);
+    return buildScheduleEvents(studyGroupIds, degreeProgramCache);
   });
 
   const getFilteredEvents = computed(() => {
@@ -159,6 +194,7 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
 
   return {
     vueCalEventsList,
+    degreeProgramEvents,
     getFilteredEvents,
     getVueCalEventId,
   };
