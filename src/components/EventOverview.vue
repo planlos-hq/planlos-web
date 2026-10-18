@@ -383,10 +383,12 @@
   .color-box {
     border-radius: 5px !important;
     display: block;
+    min-width: 0;
   }
 
+  /* 3 Farben pro Zeile, abzüglich der zwei gap-2 Abstände (je 0.5rem) */
   .color-option {
-    flex: 1 1 20%;
+    flex: 0 0 calc((100% - 2 * 0.5rem) / 3);
     min-width: 70px;
     transition: transform 0.2s ease-in-out;
   }
@@ -400,6 +402,7 @@
   }
 
   .edit-box {
+    flex-shrink: 0;
     transition: background-color 0.2s ease-in-out;
   }
 
