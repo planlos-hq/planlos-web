@@ -1,19 +1,28 @@
 import { defineStore, storeToRefs } from "pinia";
-import { computed, reactive } from "vue";
+import { computed, reactive, shallowRef, watch } from "vue";
 import { useCourseStore } from "./courseStore";
 import type { VueCalEvent } from "@/models/VueCalEvent";
+import type { Course } from "@/models/Course";
+import type { TimeSlot } from "@/models/TimeSlot";
+import type { ResourceConflict } from "@/models/ResourceConflict";
+import { Tab } from "@/enums/enums";
 import { useColorStore } from "./colorStore";
 import { useSettingsStore } from "./settingsStore";
 import { useResourceConflictStore } from "./resourceConflictsStore";
 import { useDegreeProgramStore } from "./degreeProgramStore";
 import { useStudyGroupStore } from "./studyGroupStore";
 
+const white = "#FFFFFF";
+const noConflicts: ResourceConflict[] = [];
+
 /**
- * Pinia Store für die Verwaltung von VueCal Events
+ * Pinia Store, der die im Kalender angezeigten Events aus Kursen und Zeitslots ableitet.
+ *
+ * Die Events werden aus den Stores neu berechnet und in stabile Objekte übernommen (ein Objekt pro id),
+ * weil vue-cal das Objekt einer Event-Komponente ab dem Mount festhält.
  *
  * @returns Ein Objekt mit:
- * - vueCalEventsList: Computed Liste aller VueCal Events, generiert aus Kursen, Zeitfenstern und Studiengruppen
- * - degreeProgramEvents: Computed Liste der VueCal Events aller Studiengruppen des ausgewählten Studiengangs
+ * - calendarEvents: Liste der Events für den aktuellen Tab
  */
 export const useVueCalEventStore = defineStore("vueCalEvents", () => {
   const courseStore = useCourseStore();
@@ -25,177 +34,122 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
 
   const { plannerSettings } = storeToRefs(settingsStore);
 
-  const cache = new Map<string, VueCalEvent>();
-  const filteredCache = new Map<string, VueCalEvent>();
-  const degreeProgramCache = new Map<string, VueCalEvent>();
-
   /**
-   * Gibt eine eindeutige Id zu einem VueCalEvent zurück.
-   * @param event - VueCalEvent, zu dem man die Id wissen will
-   * @returns id des Events
+   * Erzeugt ein neues VueCalEvent zu einem Zeitslot.
+   * @param course - Kurs, zu dem der Zeitslot gehört
+   * @param timeSlot - Zeitslot des Events
+   * @param studyGroupId - Studiengruppe (= Spalte), falls der Kalender Schedules anzeigt
+   * @returns neues VueCalEvent
    */
-  function getVueCalEventId(event: VueCalEvent) {
-    return `${event.timeSlotId}-${event.schedule}`;
+  function toEvent(course: Course, timeSlot: TimeSlot, studyGroupId?: number): VueCalEvent {
+    const id = studyGroupId === undefined ? `${timeSlot.id}` : `${timeSlot.id}-${studyGroupId}`;
+    return {
+      id,
+      courseId: course.id,
+      timeSlotId: timeSlot.id,
+      // Kopien, da vue-cal die übergebenen Dates normalisiert (setSeconds etc.)
+      start: new Date(timeSlot.start),
+      end: new Date(timeSlot.end),
+      title: course.name,
+      backgroundColor: course.color
+        ? (colorStore.colorMap.get(course.color.id)?.hex ?? white)
+        : white,
+      schedule: studyGroupId,
+      studyGroupId,
+      conflicts: conflictsStore.timeSlotConflictsMap.get(timeSlot.id) ?? noConflicts,
+    };
   }
 
   /**
-   * Schaut, ob ein Objekt bereits im Cache angezeigt wird.
-   * Wenn dies der Fall ist wird das bereits existierende Objekt verwendet, damit ein Neubefüllen der Eventliste keine Aktualisierung erzeugt.
-   * @param event - VueCalEvent, dass im Cache vorhanden sein kann
-   * @param targetCache - Cache, der zum cashen verwendet werden soll
-   * @param cacheKey - Schlüssel, der für targetCache verwendet wird
-   * @returns existierendes Event aus dem Cache oder ein neu erzeugtes Event
-   */
-  function getEvent(event: VueCalEvent, targetCache: Map<string, VueCalEvent>, cacheKey: string) {
-    const existingEvent = targetCache.get(cacheKey);
-
-    if (existingEvent) {
-      existingEvent.start = event.start;
-      existingEvent.end = event.end;
-      existingEvent.title = event.title;
-      existingEvent.backgroundColor = event.backgroundColor;
-      existingEvent.schedule = event.schedule;
-      existingEvent.conflicts = [...event.conflicts];
-      return existingEvent;
-    } else {
-      const reactiveEvent = reactive(event);
-      targetCache.set(cacheKey, reactiveEvent);
-      return reactiveEvent;
-    }
-  }
-
-  /**
-   * Erzeugt für jede übergebene Studiengruppe die Events ihrer Veranstaltungen,
-   * jeweils einem eigenen Schedule (Spalte) zugeordnet.
-   * Nicht mehr benötigte Events werden aus dem Cache entfernt.
-   * @param studyGroupIds - Ids der Studiengruppen, deren Events erzeugt werden sollen
-   * @param targetCache - Cache, der zum cachen verwendet werden soll
+   * Erzeugt für jede Studiengruppe die Events ihrer Kurse, jeweils in einer eigenen Spalte.
+   * @param studyGroupIds - Ids der Studiengruppen
    * @returns Liste der Events
    */
-  function buildScheduleEvents(studyGroupIds: number[], targetCache: Map<string, VueCalEvent>) {
-    const activeEventIds = new Set<string>();
-    const events: VueCalEvent[] = [];
-    const white = "#FFFFFF";
-
-    for (const studyGroup of studyGroupIds) {
-      const courses = courseStore.coursesByStudyGroup(studyGroup);
-      for (const course of courses) {
-        const color = course.color;
-        const bgColor = color ? (colorStore.colorMap.get(color.id)?.hex ?? white) : white;
-        for (const timeSlot of course.timeSlots) {
-          const event = getEvent(
-            {
-              id: `${timeSlot.id}-${studyGroup}`,
-              courseId: course.id,
-              timeSlotId: timeSlot.id,
-              start: timeSlot.start,
-              end: timeSlot.end,
-              title: course.name,
-              backgroundColor: bgColor,
-              schedule: studyGroup,
-              conflicts: conflictsStore.timeSlotConflictsMap.get(timeSlot.id) ?? [],
-            },
-            targetCache,
-            `${timeSlot.id}-${studyGroup}`
-          );
-          activeEventIds.add(getVueCalEventId(event));
-          events.push(event);
-        }
-      }
-    }
-
-    //Alte Events aus dem Cache leeren, die nicht mehr aktiv sind
-    for (const eventId of targetCache.keys()) {
-      if (!activeEventIds.has(eventId)) {
-        targetCache.delete(eventId);
-      }
-    }
-
-    return events;
+  function scheduleEvents(studyGroupIds: number[]): VueCalEvent[] {
+    return studyGroupIds.flatMap(studyGroupId =>
+      courseStore
+        .coursesByStudyGroup(studyGroupId)
+        .flatMap(course => course.timeSlots.map(ts => toEvent(course, ts, studyGroupId)))
+    );
   }
 
   /**
-   * Liste der angezeigten Events im Kalender in der Planungsansicht
+   * Erzeugt die Events aller Kurse, die zur ausgewählten Ressource gehören.
+   * @param tab - Art der Ressource
+   * @param id - Id der Ressource
+   * @returns Liste der Events
    */
-  const vueCalEventsList = computed(() => {
-    if (plannerSettings.value.studyGroups.size === 0) {
-      cache.clear();
-      return [];
-    }
+  function filteredEvents(tab: Tab, id: number): VueCalEvent[] {
+    return courseStore.courseList.flatMap(course => {
+      switch (tab) {
+        case Tab.LECTURER:
+          return course.lecturers.some(l => l.id === id)
+            ? course.timeSlots.map(ts => toEvent(course, ts))
+            : [];
+        case Tab.STUDYGROUP:
+          return course.studyGroups.some(sg => sg.id === id)
+            ? course.timeSlots.map(ts => toEvent(course, ts))
+            : [];
+        case Tab.ROOM:
+          return course.timeSlots
+            .filter(ts => ts.rooms.some(r => r.id === id))
+            .map(ts => toEvent(course, ts));
+        default:
+          return [];
+      }
+    });
+  }
 
-    return buildScheduleEvents([...plannerSettings.value.studyGroups], cache);
+  /**
+   * Die Events für den aktuellen Tab, bei jeder Änderung neu berechnet
+   */
+  const derivedEvents = computed<VueCalEvent[]>(() => {
+    const { tab, selectedId, studyGroups } = plannerSettings.value;
+    switch (tab) {
+      case Tab.COURSE:
+        return scheduleEvents([...studyGroups]);
+      case Tab.DEGREEPROGRAM: {
+        const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
+        if (degreeProgramId === null) return [];
+        return scheduleEvents(
+          studyGroupStore.studyGroupsByDegreeProgram(degreeProgramId).map(group => group.id)
+        );
+      }
+      default:
+        return selectedId === null ? [] : filteredEvents(tab, selectedId);
+    }
   });
 
   /**
-   * Liste der Events aller Studiengruppen des ausgewählten Studiengangs,
-   * wobei jede Studiengruppe einen eigenen Schedule erhält.
+   * Die im Kalender angezeigten Events. Pro id bleibt es immer dasselbe Objekt, da eine
+   * vue-cal-Event-Komponente ihr Objekt ab dem Mount festhält (`reactive(props.event)`).
    */
-  const degreeProgramEvents = computed(() => {
-    const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
-    if (degreeProgramId === null) {
-      degreeProgramCache.clear();
-      return [];
-    }
+  const calendarEvents = shallowRef<VueCalEvent[]>([]);
+  let eventsById = new Map<string, VueCalEvent>();
 
-    const studyGroupIds = studyGroupStore
-      .studyGroupsByDegreeProgram(degreeProgramId)
-      .map(group => group.id);
-    return buildScheduleEvents(studyGroupIds, degreeProgramCache);
-  });
+  /**
+   * Übernimmt neu berechnete Events in die bestehenden Objekte, neue ids werden angelegt.
+   * @param next - neu berechnete Events
+   */
+  function syncEvents(next: VueCalEvent[]) {
+    const nextById = new Map<string, VueCalEvent>();
+    calendarEvents.value = next.map(data => {
+      const { start, end, ...rest } = data;
+      const event = eventsById.get(data.id) ?? reactive({ ...data, _: { id: data.id } });
+      // Dates nur bei echter Änderung ersetzen, sonst rendert jedes Event bei jeder Neuberechnung neu
+      if (event.start.getTime() !== start.getTime()) event.start = start;
+      if (event.end.getTime() !== end.getTime()) event.end = end;
+      // `_` (interne vue-cal-Daten) bleibt erhalten, da `rest` es nicht enthält
+      Object.assign(event, rest);
+      nextById.set(data.id, event);
+      return event;
+    });
+    eventsById = nextById;
+  }
 
-  const getFilteredEvents = computed(() => {
-    const activeEventIds = new Set<string>();
-    const type = plannerSettings.value.tab;
-    const id = plannerSettings.value.selectedId;
-    const list = courseStore.courseList
-      .filter(course => {
-        switch (type) {
-          case "lecturer":
-            return course.lecturers.some(l => l.id === id);
-          case "studyGroup":
-            return course.studyGroups.some(sg => sg.id === id);
-          case "room":
-            return course.timeSlots.some(ts => ts.rooms.some(r => r.id === id));
-          default:
-            return false;
-        }
-      })
-      .flatMap(course =>
-        course.timeSlots
-          .filter(ts => type !== "room" || ts.rooms.some(r => r.id === id))
-          .map(ts => {
-            //Event aus Cache holen, falls es vorhanden ist, um Neuladen des Kalenders zu verhindern
-            const event = getEvent(
-              {
-                id: `${ts.id}`,
-                courseId: course.id,
-                timeSlotId: ts.id,
-                start: ts.start,
-                end: ts.end,
-                title: course.name,
-                backgroundColor: course.color?.hex ?? "#FFFFFF",
-                conflicts: conflictsStore.timeSlotConflictsMap.get(ts.id) ?? [],
-              },
-              filteredCache,
-              `${ts.id}`
-            );
-            activeEventIds.add(event.id);
-            return event;
-          })
-      );
-
-    for (const eventId of filteredCache.keys()) {
-      if (!activeEventIds.has(eventId)) {
-        filteredCache.delete(eventId);
-      }
-    }
-    return list;
-  });
+  watch(derivedEvents, syncEvents, { immediate: true });
 
   return {
-    vueCalEventsList,
-    degreeProgramEvents,
-    getFilteredEvents,
-    getVueCalEventId,
+    calendarEvents,
   };
 });

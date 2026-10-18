@@ -8,10 +8,11 @@
         :key="plannerSettings.tab"
         v-bind="timetableConfig"
         :schedules="calendarSchedules"
-        :events="events"
+        :events="vueCalEventStore.calendarEvents"
         :hide-weekdays="plannerSettings.hiddenWeekdays"
         :special-hours="breaks"
         @event-drop="onEventDrop"
+        @event-resize="isValidResize"
         @event-resize-end="onEventResize"
       >
         <template #event="{ event }">
@@ -52,8 +53,6 @@
   import { useCourseStore } from "@/stores/courseStore";
   import type { Course } from "@/models/Course";
   import SideBar from "@/components/SideBar.vue";
-  import { useRoomStore } from "@/stores/roomStore";
-  import { useLecturerStore } from "@/stores/lecturerStore";
   import { Tab } from "@/enums/enums";
   import { handleUpdate } from "@/updates/handler.updates";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
@@ -69,16 +68,33 @@
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
   const studyGroupStore = useStudyGroupStore();
-  const roomStore = useRoomStore();
-  const lecturerStore = useLecturerStore();
   const resourceConflictStore = useResourceConflictStore();
   const settingsStore = useSettingsStore();
   const { plannerSettings } = storeToRefs(settingsStore);
 
   const queryParams = useQueryParameters();
 
-  const selectedEvent = ref<VueCalEvent | null>(null);
   const showEventOverview = ref<boolean>(false);
+
+  const selectedEventId = ref<string | null>(null);
+  /** Das ausgewählte Event, über die id aus der aktuellen Event-Liste gesucht */
+  const selectedEvent = computed(
+    () => vueCalEventStore.calendarEvents.find(e => e.id === selectedEventId.value) ?? null
+  );
+
+  /**
+   * Kümmert sich um den Klick auf ein Event im Kalender
+   * @param event - Event aus VueCal, besteht aus e = JS Dom Event und event = clicked calender event
+   */
+  function handleEventClick(event: VueCalEvent) {
+    selectedEventId.value = event.id;
+    showEventOverview.value = true;
+  }
+
+  // Wenn das ausgewählte Event verschwindet (gelöscht, Filter geändert), wird das EventOverview geschlossen.
+  watch(selectedEvent, event => {
+    if (!event) showEventOverview.value = false;
+  });
 
   /**
    * Setzt die Hintergrundfarbe des Events
@@ -89,14 +105,6 @@
       return;
     }
     courseStore.updateCourse(selectedEvent.value.courseId, { color: color });
-  }
-  /**
-   * Kümmert sich um den Klick auf ein Event im Kalender
-   * @param event - Event aus VueCal, besteht aus e = JS Dom Event und event = clicked calender event
-   */
-  function handleEventClick(event: VueCalEvent) {
-    selectedEvent.value = event;
-    showEventOverview.value = true;
   }
 
   watch(
@@ -109,16 +117,6 @@
       }
     },
     { deep: true }
-  );
-
-  //Wenn ein Event entfernt wird, wird das EventOverview sofort geschlossen.
-  watch(
-    () => vueCalEventStore.vueCalEventsList,
-    list => {
-      if (!list.some(e => e.id === selectedEvent.value?.id)) {
-        showEventOverview.value = false;
-      }
-    }
   );
 
   const calendarSchedules = computed(() => {
@@ -134,31 +132,6 @@
 
   const breaks = computed(() => {
     return plannerSettings.value.showBreaks ? specialHours : {};
-  });
-
-  const events = computed(() => {
-    if (plannerSettings.value.tab === Tab.COURSE) return vueCalEventStore.vueCalEventsList;
-
-    let id: number | null = null;
-
-    switch (plannerSettings.value.tab) {
-      case Tab.LECTURER:
-        id = lecturerStore.selectedLecturerId;
-        break;
-      case Tab.STUDYGROUP:
-        id = studyGroupStore.selectedStudyGroupId;
-        break;
-      case Tab.ROOM:
-        id = roomStore.selectedRoomId;
-        break;
-      case Tab.DEGREEPROGRAM:
-        return vueCalEventStore.degreeProgramEvents;
-      default:
-        return [];
-    }
-    if (id === null) return [];
-
-    return vueCalEventStore.getFilteredEvents;
   });
 
   // Festgelegte Grenzen für Start- und Endzeitwerte
@@ -209,7 +182,6 @@
 
     //löscht den timeslot
     timeSlotStore.deleteTimeSlot(event.timeSlotId);
-    course.timeSlots = course.timeSlots.filter(t => t.id !== event.timeSlotId);
   }
 
   /**
@@ -245,7 +217,7 @@
    *  - external: True, wenn das Event von außen stammt
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function onEventDrop({ event, external }: { event: any; external: boolean }) {
+  function onEventDrop({ event, external }: { event: any; external: boolean }): false {
     // Startzeit nicht unterhalb der festgelegten Grenze
     const start = new Date(event.start);
     if (start.getHours() < minStartHours) {
@@ -258,9 +230,8 @@
 
     if (external) {
       const course = courseStore.readCourse(event.id);
-      if (!course) {
-        return;
-      }
+      if (!course) return false;
+
       // Neue Events erhalten ein Standard-Dauer von 90 Minuten
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + 90);
@@ -274,9 +245,9 @@
       timeSlotStore.createTimeSlot(course.id, start, end);
     } else {
       const course = courseStore.readCourse(event.courseId);
-      if (!course) return;
+      if (!course) return false;
       const timeSlot = timeSlotStore.readTimeSlot(event.timeSlotId);
-      if (!timeSlot) return;
+      if (!timeSlot) return false;
       const durationMin = (timeSlot.end.getTime() - timeSlot.start.getTime()) / 1000 / 60;
 
       const end = new Date(start);
@@ -291,31 +262,39 @@
 
       timeSlotStore.updateTimeSlot(event.timeSlotId, { start: start, end: end });
     }
+    // Vue-Cal soll nichts selbst ändern - Store ist Source of Truth
+    return false;
   }
+
   /**
-   * Wird ausgelöst, wenn ein Event in vue-cal in der Höhe verändert wird.
-   * Aktualisiert die Dauer (Start/Ende) des Timeslots im Store.
-   * Events können frühsten 8 Uhr beginnen.
+   * Wird bei jedem Schritt während des Resizens aufgerufen.
+   * Lehnt Schritte ab, bei denen das Event vor 8 Uhr beginnt oder kürzer als die Mindestdauer ist,
+   * vue-cal behält dann den letzten gültigen Stand.
+   *
+   * @param Objekt - Objekt mit:
+   *  - event: das Event mit den neuen Zeiten
+   * @returns false, wenn der Schritt abgelehnt wird
+   */
+  function isValidResize({ event }: { event: VueCalEvent }): boolean {
+    const earliestStart = new Date(event.start);
+    earliestStart.setHours(minStartHours, 0, 0, 0);
+    const durationMs = event.end.getTime() - event.start.getTime();
+    return event.start >= earliestStart && durationMs >= minDurationMinutes * 60 * 1000;
+  }
+
+  /**
+   * Wird ausgelöst, wenn ein Event in vue-cal in der Höhe verändert wurde.
+   * Die Zeiten wurden bereits in isValidResize geprüft.
    *
    * @param Objekt - Objekt mit:
    *  - event: das veränderte VueCalEvent
    */
   function onEventResize({ event }: { event: VueCalEvent }) {
-    // Wenn die Startzeit des Events vor um 8 ist, wird sie auf 8 Uhr gesetzt
-    const start = new Date(event.start);
-    if (start.getHours() < minStartHours) {
-      start.setHours(minStartHours, 0, 0, 0);
-    }
-
-    let end = new Date(event.end);
-
-    if (end.getTime() - start.getTime() <= 1000 * 60 * minDurationMinutes) {
-      end = new Date(start);
-      end.setMinutes(end.getMinutes() + minDurationMinutes);
-    }
-
-    const course = courseStore.readCourse(event.courseId);
-    if (!course) return;
-    timeSlotStore.updateTimeSlot(event.timeSlotId, { start: start, end: end });
+    timeSlotStore.updateTimeSlot(event.timeSlotId, {
+      start: new Date(event.start),
+      end: new Date(event.end),
+    });
+    // Kein `false`: Sonst setzt vue-cal das Event nach diesem Handler auf die alte Zeit zurück.
+    // vue-cal übernimmt dieselben Zeiten wie der Store, bei einem API-Fehler setzt der Rollback beide zurück.
   }
 </script>

@@ -56,11 +56,10 @@
 </template>
 
 <script setup lang="ts">
-  import type { Course } from "@/models/Course";
   import type { VueCalEvent } from "@/models/VueCalEvent";
   import { useCourseStore } from "@/stores/courseStore";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
-  import { computed, onMounted, ref, watch } from "vue";
+  import { computed, ref, watch } from "vue";
   import { Tab } from "@/enums/enums";
   import { useColor } from "@/composables/useColor";
   import { BPopover } from "bootstrap-vue-next";
@@ -96,8 +95,9 @@
     click: [void];
   }>();
 
-  const event = ref(props.event);
-  const course = ref<Course | undefined>();
+  const course = computed(() => courseStore.courseMap.get(props.event.courseId));
+
+  const hasConflict = computed(() => props.event.conflicts.length > 0);
 
   const details = computed(() => {
     if (!course.value) return [];
@@ -123,17 +123,6 @@
     }
   });
 
-  const hasConflict = computed(() => {
-    if (event.value.conflicts === undefined) return false;
-    if (event.value.conflicts.length === 0) return false;
-    return true;
-  });
-
-  onMounted(() => {
-    if (props.event.courseId !== undefined)
-      course.value = courseStore.readCourse(props.event.courseId);
-  });
-
   // Lässt das Event kurz aufleuchten, wenn in der Sidebar das Kalender-Icon des zugehörigen Kurses angeklickt wurde.
   const isBlinking = ref(false);
   let blinkTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -152,20 +141,15 @@
     }
   );
 
-  /**Kann nur Schwarz oder weiß sein, Bedingung ist nur zum Testen */
+  /** Schriftfarbe ist immer Schwarz oder Weiß, je nach Hintergrund */
   const fontColor = computed(() => {
-    if (event.value.backgroundColor === undefined) {
-      return black;
-    }
-    if (event.value.backgroundColor === "") {
-      return black;
-    }
-    const backgroundColor = event.value.backgroundColor;
-    return calculateFontColor(backgroundColor);
+    const bg = props.event.backgroundColor;
+    if (bg === undefined || bg === "") return black;
+    return calculateFontColor(bg);
   });
 
   const blinkColor = computed(() => {
-    const bg = event.value.backgroundColor ?? black;
+    const bg = props.event.backgroundColor ?? black;
     return `color-mix(in srgb, ${bg}, ${calculateFontColor(bg)} 45%)`;
   });
 

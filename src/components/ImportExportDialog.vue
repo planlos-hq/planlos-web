@@ -268,7 +268,9 @@
       // Use server filename ONLY if it's not the generic 'export.csv' or 'export.xlsx'
       const genericFilename = `export.${extension}`;
       const filename =
-        serverFilename !== undefined && serverFilename !== null && serverFilename !== genericFilename
+        serverFilename !== undefined &&
+        serverFilename !== null &&
+        serverFilename !== genericFilename
           ? serverFilename
           : `${resourceLabel}.${extension}`;
 

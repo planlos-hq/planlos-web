@@ -62,6 +62,12 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
     return timeSlot;
   }
 
+  // TODO: Der aktuelle Rollback deckt nur einzelne Fehler sauber ab. Offen:
+  //  - fetch ohne Timeout: hängender Request zeigt ungespeicherten Stand ohne Rückmeldung
+  //  - bei Fehler statt Snapshot den Server-Stand nachladen (getTimeSlotApi), sonst gehen
+  //    erfolgreiche/fremde Änderungen lokal verloren; Zähler pro Slot gegen Überholen
+  //  - SSE-Handler übernimmt Echos blind, ältere Echos überschreiben kurz neuere Änderungen
+
   /**
    * Aktualisiert einen existierenden TimeSlot mit neuen Werten
    *
@@ -70,15 +76,25 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
    * @param timeSlots - Liste der TimeSlots
    */
   async function updateTimeSlot(id: number, updates: Partial<Omit<TimeSlot, "id">>) {
-    try {
-      const oldTimeSlot = readTimeSlot(id);
-      if (!oldTimeSlot) throw Error("TimeSlot existiert lokal nicht.");
+    const timeSlot = readTimeSlot(id);
+    if (!timeSlot) {
+      handleError(
+        Error("TimeSlot existiert lokal nicht."),
+        "Fehler beim Aktualisieren des Zeitslots"
+      );
+      return;
+    }
 
-      const apiUpdates = mapTimeSlotUpdatesToApi(updates, oldTimeSlot);
+    const apiUpdates = mapTimeSlotUpdatesToApi(updates, timeSlot);
+    const previous = { start: timeSlot.start, end: timeSlot.end };
+
+    // optimistisch aktualisiert: Kalender zeigt die Änderung sofort (muss vor dem ersten await passieren)
+    Object.assign(timeSlot, updates);
+    try {
       await updateTimeSlotApi(id, apiUpdates);
     } catch (error) {
-      const e = error as Error;
-      handleError(e, "Fehler beim Aktualisieren des Zeitslots");
+      Object.assign(timeSlot, previous);
+      handleError(error as Error, "Fehler beim Aktualisieren des Zeitslots");
     }
   }
 

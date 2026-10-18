@@ -359,12 +359,6 @@
       return;
     }
 
-    console.log(props.event.end);
-    console.log(newEndDate);
-
-    console.log(props.event.end);
-    console.log(newEndDate);
-
     timeSlotStore.updateTimeSlot(timeSlot.id, { start: newStartDate, end: newEndDate });
   }
 
