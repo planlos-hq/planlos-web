@@ -145,6 +145,7 @@
   import DegreeProgrammButton from "./IconButtons/DegreeProgrammButton.vue";
   import ExtraResourceData from "./ExtraResourceData.vue";
   import { useTemplateStore } from "@/stores/templateStore.ts";
+  import { useViewStore } from "@/stores/viewStore";
   import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate.ts";
   import TemplatePopUp from "./TemplatePopUp.vue";
 
@@ -208,6 +209,7 @@
   const degreeProgramStore = useDegreeProgramStore();
   const courseStore = useCourseStore();
   const templateStore = useTemplateStore();
+  const viewStore = useViewStore();
 
   watch(
     () => props.selectedTab,
@@ -222,7 +224,7 @@
       selectedResource: () => lecturerStore.selectedLecturer,
       create: item => lecturerStore.createLecturer(item),
       update: (id, updates) => lecturerStore.updateLecturer(id, updates),
-      select: id => lecturerStore.selectLecturer(id),
+      select: id => viewStore.select(Tab.LECTURER, id),
       delete: id => lecturerStore.deleteLecturer(id),
       fields: ["firstName", "lastName", "abbreviation", "notes", "kind", "isRelevant", "extraData"],
       attributes: [
@@ -250,7 +252,7 @@
       selectedResource: () => roomStore.selectedRoom,
       create: item => roomStore.createRoom(item),
       update: (id, updates) => roomStore.updateRoom(id, updates),
-      select: id => roomStore.selectRoom(id),
+      select: id => viewStore.select(Tab.ROOM, id),
       delete: id => roomStore.deleteRoom(id),
       fields: ["number", "name", "seats", "extraData"],
       attributes: [
@@ -264,7 +266,7 @@
       selectedResource: () => studyGroupStore.selectedStudyGroup,
       create: item => studyGroupStore.createStudyGroup(item),
       update: (id, updates) => studyGroupStore.updateStudyGroup(id, updates),
-      select: id => studyGroupStore.selectStudyGroup(id),
+      select: id => viewStore.select(Tab.STUDYGROUP, id),
       delete: id => studyGroupStore.deleteStudyGroup(id),
       fields: ["degreeProgram", "semesterSeason", "semesterYear", "studentCount", "extraData"],
       attributes: [
@@ -343,7 +345,7 @@
       selectedResource: () => degreeProgramStore.selectedDegreeProgram,
       create: item => degreeProgramStore.createDegreeProgram(item),
       update: (id, updates) => degreeProgramStore.updateDegreeProgram(id, updates),
-      select: id => degreeProgramStore.selectDegreeProgram(id),
+      select: id => viewStore.select(Tab.DEGREEPROGRAM, id),
       delete: id => degreeProgramStore.deleteDegreeProgram(id),
       fields: ["name", "abbreviation", "extraData"],
       attributes: [
@@ -356,7 +358,7 @@
       selectedResource: () => courseStore.selectedCourse,
       create: item => courseStore.createCourse(item),
       update: (id, updates) => courseStore.updateCourse(id, updates),
-      select: id => courseStore.selectCourse(id),
+      select: id => viewStore.select(Tab.COURSE, id),
       delete: id => courseStore.deleteCourse(id),
       fields: [
         "number",
@@ -428,7 +430,8 @@
   const { formData, update, create, cancel, isItemSelected, toggleItem } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useResourceForm<any>(
-      () => activeConfig.value.selectedResource(),
+      // Im Create-Modus startet das Formular leer, die Auswahl in der Ansicht bleibt unberührt
+      () => (props.mode === "create" ? undefined : activeConfig.value.selectedResource()),
       () => activeConfig.value.fields, // Notwendig, da sich die Keys zur Laufzeit ändern
       (id, updates) => activeConfig.value.update(id, updates),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -619,21 +622,12 @@
   }
 
   /**
-   * Leert die Auswahlfelder zum Erstellen von Resourcen und initialisiert das virtuelle
-   * 'courses'-Feld im StudyGroup-Tab. Die Resets müssen zuerst laufen, damit im Create-Modus
-   * die Kursliste anschließend mit einer leeren Liste startet.
+   * Initialisiert das virtuelle 'courses'-Feld im StudyGroup-Tab. Im Create-Modus startet die
+   * Kursliste leer.
    */
   function onShown() {
-    if (props.mode === "create") {
-      lecturerStore.selectLecturer(null);
-      studyGroupStore.selectStudyGroup(null);
-      degreeProgramStore.selectDegreeProgram(null);
-      roomStore.selectRoom(null);
-      courseStore.selectCourse(null);
-    }
-
     if (selectedTab.value === Tab.STUDYGROUP) {
-      const group = studyGroupStore.selectedStudyGroup;
+      const group = props.mode === "create" ? undefined : studyGroupStore.selectedStudyGroup;
       (formData.value as { courses?: Course[] }).courses = group
         ? courseStore.coursesByStudyGroup(group.id)
         : [];

@@ -33,20 +33,18 @@
 <script setup lang="ts">
   import { BModal, BInputGroup, BFormInput, BButton } from "bootstrap-vue-next";
   import { computed, ref } from "vue";
-  import { useQueryParameters } from "@/composables/useQueryParameters";
   import { Clipboard, FileDown } from "lucide-vue-next";
-  import { useSettingsStore } from "@/stores/settingsStore";
+  import { useViewStore } from "@/stores/viewStore";
   import { Tab } from "@/enums/enums";
   import html2canvas from "html2canvas-pro";
   import jsPDF from "jspdf";
 
-  const params = useQueryParameters();
-  const store = useSettingsStore();
+  const viewStore = useViewStore();
 
-  const url = computed(() => params.getShareableUrl(store.plannerSettings));
+  const url = computed(() => viewStore.shareUrl);
 
   const pdfFilename = computed(() => {
-    const tab = store.plannerSettings.tab;
+    const tab = viewStore.view.tab;
     const tabLabel: Record<string, string> = {
       [Tab.COURSE]: "stundenplan-kurse",
       [Tab.LECTURER]: "stundenplan-dozenten",

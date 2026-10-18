@@ -3,12 +3,13 @@ import type { UpdateOperation } from "./types.updates";
 import { mapApiStudyGroup } from "@/api/util";
 import { useStudyGroupStore } from "@/stores/studyGroupStore";
 import { useDegreeProgramStore } from "@/stores/degreeProgramStore";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useViewStore } from "@/stores/viewStore";
+import { Tab } from "@/enums/enums";
 
 export function handleStudyGroup(operation: UpdateOperation, data: StudyGroupApiData | number) {
   const studyGroupStore = useStudyGroupStore();
   const degreeProgramStore = useDegreeProgramStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
   let s: StudyGroupApiData | number;
   switch (operation) {
     case "create":
@@ -36,8 +37,7 @@ export function handleStudyGroup(operation: UpdateOperation, data: StudyGroupApi
     case "delete":
       s = data as number;
       studyGroupStore.studyGroupMap.delete(s);
-      settingsStore.removeOldDataFromLocalStorageState();
-      settingsStore.removeOldDataFromQueryParameters();
+      viewStore.forget(Tab.STUDYGROUP, s);
       break;
   }
 }

@@ -2,7 +2,8 @@ import type { UpdateOperation } from "./types.updates";
 import { useDegreeProgramStore } from "@/stores/degreeProgramStore";
 import type { DegreeProgramApiData } from "@/api/types";
 import { mapApiDegreeProgram } from "@/api/util";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useViewStore } from "@/stores/viewStore";
+import { Tab } from "@/enums/enums";
 
 export function handleDegreeProgram(
   operation: UpdateOperation,
@@ -10,7 +11,7 @@ export function handleDegreeProgram(
 ) {
   let d;
   const degreeProgramStore = useDegreeProgramStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
   switch (operation) {
     case "create":
       d = data as DegreeProgramApiData;
@@ -27,8 +28,7 @@ export function handleDegreeProgram(
     case "delete":
       d = data as number;
       degreeProgramStore.degreeProgramMap.delete(d);
-      settingsStore.removeOldDataFromLocalStorageState();
-      settingsStore.removeOldDataFromQueryParameters();
+      viewStore.forget(Tab.DEGREEPROGRAM, d);
       break;
   }
 }

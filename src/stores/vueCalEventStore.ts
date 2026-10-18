@@ -1,4 +1,4 @@
-import { defineStore, storeToRefs } from "pinia";
+import { defineStore } from "pinia";
 import { computed, reactive, shallowRef, watch } from "vue";
 import { useCourseStore } from "./courseStore";
 import type { VueCalEvent } from "@/models/VueCalEvent";
@@ -7,9 +7,8 @@ import type { TimeSlot } from "@/models/TimeSlot";
 import type { ResourceConflict } from "@/models/ResourceConflict";
 import { Tab } from "@/enums/enums";
 import { useColorStore } from "./colorStore";
-import { useSettingsStore } from "./settingsStore";
+import { useViewStore } from "./viewStore";
 import { useResourceConflictStore } from "./resourceConflictsStore";
-import { useDegreeProgramStore } from "./degreeProgramStore";
 import { useStudyGroupStore } from "./studyGroupStore";
 
 const white = "#FFFFFF";
@@ -27,12 +26,9 @@ const noConflicts: ResourceConflict[] = [];
 export const useVueCalEventStore = defineStore("vueCalEvents", () => {
   const courseStore = useCourseStore();
   const colorStore = useColorStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
   const conflictsStore = useResourceConflictStore();
-  const degreeProgramStore = useDegreeProgramStore();
   const studyGroupStore = useStudyGroupStore();
-
-  const { plannerSettings } = storeToRefs(settingsStore);
 
   /**
    * Erzeugt ein neues VueCalEvent zu einem Zeitslot.
@@ -104,19 +100,18 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
    * Die Events für den aktuellen Tab, bei jeder Änderung neu berechnet
    */
   const derivedEvents = computed<VueCalEvent[]>(() => {
-    const { tab, selectedId, studyGroups } = plannerSettings.value;
+    const { tab, selected } = viewStore.view;
+    const selectedId = selected[tab];
     switch (tab) {
       case Tab.COURSE:
-        return scheduleEvents([...studyGroups]);
-      case Tab.DEGREEPROGRAM: {
-        const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
-        if (degreeProgramId === null) return [];
+        return scheduleEvents(viewStore.studyGroups);
+      case Tab.DEGREEPROGRAM:
+        if (selectedId === undefined) return [];
         return scheduleEvents(
-          studyGroupStore.studyGroupsByDegreeProgram(degreeProgramId).map(group => group.id)
+          studyGroupStore.studyGroupsByDegreeProgram(selectedId).map(group => group.id)
         );
-      }
       default:
-        return selectedId === null ? [] : filteredEvents(tab, selectedId);
+        return selectedId === undefined ? [] : filteredEvents(tab, selectedId);
     }
   });
 

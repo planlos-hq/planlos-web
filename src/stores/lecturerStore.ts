@@ -4,19 +4,19 @@ import type { Lecturer } from "@/models/Lecturer";
 import { createLecturerApi, deleteLecturerApi, updateLecturerApi } from "@/api/lecturer";
 import { mapLecturerUpdatesToApi } from "@/api/util";
 import { useNotification } from "@/composables/useNotification";
+import { Tab } from "@/enums/enums";
+import { useViewStore } from "./viewStore";
 
 /**
  * Pinia Store für die Verwaltung von Dozenten
  *
  * @returns Ein Objekt mit:
  * - lecturerList: Reaktive Liste aller Dozenten
- * - selectedLecturerId: Id des (in der Verwaltungsansicht) ausgewählten Dozenten
- * - selectedLecturer: Ermittelt den gewählten Dozenten anhand der selectedLecturerId
+ * - selectedLecturer: Ausgewählte Ressource laut Ansicht (URL)
  * - createLecturer: Funktion zum Erstellen eines neuen Dozenten
  * - readLecturer: Funktio zum Abrufen eines Dozenten per ID
  * - updateLecturer: Funktion zum Aktualisieren eines Dozenten
  * - deleteLecturer: Funktion zum Löschen eines Dozenten
- * - selectLecturer: Funktion zum Setzen der selectedLecturerId
  */
 export const useLecturerStore = defineStore("lecturers", () => {
   const lecturerMap = ref<Map<number, Lecturer>>(new Map<number, Lecturer>());
@@ -32,7 +32,7 @@ export const useLecturerStore = defineStore("lecturers", () => {
     }
     return lecturers;
   });
-  const selectedLecturerId = ref<number | null>(null);
+  const viewStore = useViewStore();
   const { showSuccess, handleError, showError } = useNotification();
 
   /**
@@ -105,7 +105,6 @@ export const useLecturerStore = defineStore("lecturers", () => {
   async function deleteLecturer(id: number) {
     try {
       await deleteLecturerApi(id);
-      selectedLecturerId.value = null;
       showSuccess("Dozent erfolgreich gelöscht!");
     } catch (error) {
       const e = error as Error;
@@ -114,24 +113,11 @@ export const useLecturerStore = defineStore("lecturers", () => {
   }
 
   /**
-   * Dient der Auswahl eines Dozenten. Setzt dafür die selectedLecturerId.
-   *
-   * @param id - eindeutige ID des Dozenten
-   */
-  function selectLecturer(id: number | null) {
-    selectedLecturerId.value = id;
-  }
-
-  /**
-   * Ermittelt den gewählte Dozenten basierend auf der selectedLecturerId
-   *
-   * @returns ausgewählter Dozent
+   * Die in der Ansicht (URL) ausgewählte Ressource, undefined falls keine gewählt ist oder sie nicht existiert
    */
   const selectedLecturer = computed(() => {
-    if (selectedLecturerId.value === null) {
-      return null;
-    }
-    return lecturerMap.value.get(selectedLecturerId.value);
+    const id = viewStore.view.selected[Tab.LECTURER];
+    return id === undefined ? undefined : lecturerMap.value.get(id);
   });
 
   return {
@@ -142,8 +128,6 @@ export const useLecturerStore = defineStore("lecturers", () => {
     readLecturer,
     updateLecturer,
     deleteLecturer,
-    selectLecturer,
-    selectedLecturerId,
     selectedLecturer,
   };
 });

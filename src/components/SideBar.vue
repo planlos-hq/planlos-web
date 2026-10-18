@@ -4,8 +4,8 @@
     @close="showSettings = !showSettings"
     @open-import-export="showImportExportDialog = true"
   />
-  <resource-dialog v-model="showCreateDialog" mode="create" :selected-tab="plannerSettings.tab" />
-  <resource-dialog v-model="showEditDialog" mode="edit" :selected-tab="plannerSettings.tab" />
+  <resource-dialog v-model="showCreateDialog" mode="create" :selected-tab="view.tab" />
+  <resource-dialog v-model="showEditDialog" mode="edit" :selected-tab="view.tab" />
   <conflicts-pop-up v-model="showConflicts" />
   <share-settings-dialog v-model="showShareDialog" />
   <import-export-dialog v-model="showImportExportDialog" />
@@ -25,7 +25,7 @@
       <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />
     </div>
 
-    <div class="temp-container" v-if="plannerSettings.temp">
+    <div class="temp-container" v-if="view.temp">
       <div class="temp-info">
         <info class="temp-icon" style="height: 1.125rem; width: 1.125rem" />
 
@@ -37,7 +37,7 @@
           variant="primary"
           size="sm"
           class="d-flex align-items-center gap-2"
-          @click="plannerSettings.temp = false"
+          @click="viewStore.keepTemp()"
         >
           <save style="height: 1.125rem; width: 1.125rem" />
           Übernehmen
@@ -47,7 +47,7 @@
           variant="outline-secondary"
           size="sm"
           class="d-flex align-items-center gap-2"
-          @click="plannerSettings = settingsStore.loadSettingsFromLocalStorage()"
+          @click="viewStore.discardTemp()"
         >
           <rotate-ccw style="height: 1.125rem; width: 1.125rem" />
           Zurückspringen
@@ -59,31 +59,31 @@
       <planning-button
         @click="selectTab(Tab.COURSE)"
         :size="20"
-        :class="{ selected: plannerSettings.tab === Tab.COURSE }"
+        :class="{ selected: view.tab === Tab.COURSE }"
         :title="'Veranstaltungen'"
       />
       <lecturer-button
         @click="selectTab(Tab.LECTURER)"
         :size="20"
-        :class="{ selected: plannerSettings.tab === Tab.LECTURER }"
+        :class="{ selected: view.tab === Tab.LECTURER }"
         :title="'Lehrpersonen'"
       />
       <study-group-button
         @click="selectTab(Tab.STUDYGROUP)"
         :size="20"
-        :class="{ selected: plannerSettings.tab === Tab.STUDYGROUP }"
+        :class="{ selected: view.tab === Tab.STUDYGROUP }"
         :title="'Semestergruppen'"
       />
       <degree-programm-button
         @click="selectTab(Tab.DEGREEPROGRAM)"
         :size="20"
-        :class="{ selected: plannerSettings.tab === Tab.DEGREEPROGRAM }"
+        :class="{ selected: view.tab === Tab.DEGREEPROGRAM }"
         :title="'Studiengänge'"
       />
       <room-button
         @click="selectTab(Tab.ROOM)"
         :size="20"
-        :class="{ selected: plannerSettings.tab === Tab.ROOM }"
+        :class="{ selected: view.tab === Tab.ROOM }"
         :title="'Räume'"
       />
     </div>
@@ -93,7 +93,7 @@
 
       <toggle-all-button
         class="ms-2"
-        v-if="plannerSettings.tab === Tab.COURSE && plannerSettings.studyGroups.size > 0"
+        v-if="view.tab === Tab.COURSE && viewStore.studyGroups.length > 0"
         :size="24"
         v-model="showAllCourses"
       />
@@ -112,7 +112,7 @@
           :selected-id="selectedId"
         >
           <template #listElement="{ item }">
-            <div v-if="plannerSettings.tab === Tab.COURSE && isCourse(item)" class="course-item">
+            <div v-if="view.tab === Tab.COURSE && isCourse(item)" class="course-item">
               <div class="course-text">
                 <p class="m-0">{{ item.number }} - {{ item.abbreviation }}</p>
                 <p class="m-0">{{ item.name }}</p>
@@ -190,7 +190,7 @@
 <script setup lang="ts">
   import type { Course } from "@/models/Course";
   import { useCourseStore } from "@/stores/courseStore";
-  import { computed, onMounted, ref, watch } from "vue";
+  import { computed, ref } from "vue";
   import ListWithSearch from "@/components/ListWithSearch.vue";
   import TimeTableSettings from "./TimeTableSettings.vue";
   import SettingsButton from "./IconButtons/SettingsButton.vue";
@@ -238,7 +238,7 @@
     RotateCcw,
     Save,
   } from "lucide-vue-next";
-  import { useSettingsStore } from "@/stores/settingsStore";
+  import { useViewStore } from "@/stores/viewStore";
   import type { SortOption } from "@/models/SortOptions";
   import ImportExportDialog from "./ImportExportDialog.vue";
   import ToggleAllButton from "./IconButtons/ToggleAllButton.vue";
@@ -254,9 +254,9 @@
   const degreeProgramStore = useDegreeProgramStore();
   const studyGroupStore = useStudyGroupStore();
   const conflictStore = useResourceConflictStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
 
-  const { plannerSettings } = storeToRefs(settingsStore);
+  const { view } = storeToRefs(viewStore);
 
   const { lecturerList } = storeToRefs(lecturerStore);
   const { roomList } = storeToRefs(roomStore);
@@ -265,23 +265,17 @@
 
   const showAllCourses = ref(false);
 
-  onMounted(() => {
-    if (plannerSettings.value.selectedId !== undefined) {
-      handleSelect(plannerSettings.value.selectedId);
-    }
-  });
-
   const courseList = computed(() => {
-    if (plannerSettings.value.studyGroups.size === 0 || showAllCourses.value) {
+    if (viewStore.studyGroups.length === 0 || showAllCourses.value) {
       return courseStore.courseList;
     }
     return courseStore.courseList.filter(course =>
-      course.studyGroups.some(group => plannerSettings.value.studyGroups.has(group.id))
+      course.studyGroups.some(group => viewStore.studyGroups.includes(group.id))
     );
   });
 
   const title = computed((): string => {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.LECTURER:
         return "Lehrpersonen";
       case Tab.STUDYGROUP:
@@ -297,14 +291,14 @@
     }
   });
 
-  const planning = computed(() => plannerSettings.value.tab === "course");
+  const planning = computed(() => view.value.tab === "course");
 
   function sortBy<T>(extract: (item: T) => string) {
     return (a: T, b: T) => extract(a).localeCompare(extract(b));
   }
 
   const sortOptions = computed<SortOption<ListItem>[]>(() => {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.COURSE:
         return [
           { label: "Name", comparator: sortBy<ListItem>(c => (isCourse(c) ? c.name : "")) },
@@ -362,7 +356,7 @@
   });
 
   const listItems = computed<ListItem[]>(() => {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.LECTURER:
         return lecturerList.value;
       case Tab.STUDYGROUP:
@@ -378,23 +372,8 @@
     }
   });
 
-  const selectedId = computed(() => {
-    switch (plannerSettings.value.tab) {
-      case Tab.LECTURER:
-        return lecturerStore.selectedLecturerId;
-      case Tab.STUDYGROUP:
-        return studyGroupStore.selectedStudyGroupId;
-      case Tab.DEGREEPROGRAM:
-        return degreeProgramStore.selectedDegreeProgramId;
-      case Tab.ROOM:
-        return roomStore.selectedRoomId;
-      default:
-        return courseStore.selectedCourseId;
-    }
-  });
-
   const selectedItem = computed(() => {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.LECTURER:
         return lecturerStore.selectedLecturer;
       case Tab.STUDYGROUP:
@@ -408,30 +387,15 @@
     }
   });
 
-  function handleSelect(id: number | null) {
-    plannerSettings.value.selectedId = id;
+  /** Nur existierende Ressourcen gelten als ausgewählt, eine veraltete ID in der URL ergibt null */
+  const selectedId = computed(() => selectedItem.value?.id ?? null);
 
-    switch (plannerSettings.value.tab) {
-      case Tab.LECTURER:
-        lecturerStore.selectLecturer(id);
-        break;
-      case Tab.STUDYGROUP:
-        studyGroupStore.selectStudyGroup(id);
-        break;
-      case Tab.DEGREEPROGRAM:
-        degreeProgramStore.selectDegreeProgram(id);
-        break;
-      case Tab.ROOM:
-        roomStore.selectRoom(id);
-        break;
-      case Tab.COURSE:
-        courseStore.selectCourse(id);
-        break;
-    }
+  function handleSelect(id: number | null) {
+    viewStore.select(view.value.tab, id);
   }
 
   function handleDelete(id: number) {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.LECTURER:
         lecturerStore.deleteLecturer(id);
         deleteDialog.value = false;
@@ -456,19 +420,19 @@
   }
 
   function getDisplayName(item: ListItem) {
-    if (plannerSettings.value.tab === Tab.COURSE && isCourse(item)) {
+    if (view.value.tab === Tab.COURSE && isCourse(item)) {
       return `${item.number} - ${item.abbreviation} ${item.name}`;
     }
-    if (plannerSettings.value.tab === Tab.LECTURER && isLecturer(item)) {
+    if (view.value.tab === Tab.LECTURER && isLecturer(item)) {
       return `${item.firstName.charAt(0)}. ${item.lastName}`;
     }
-    if (plannerSettings.value.tab === Tab.STUDYGROUP && isStudyGroup(item)) {
+    if (view.value.tab === Tab.STUDYGROUP && isStudyGroup(item)) {
       return `${item.degreeProgram.abbreviation}${item.semesterYear % 100}_${item.semesterSeason.charAt(0).toUpperCase()}`;
     }
-    if (plannerSettings.value.tab === Tab.DEGREEPROGRAM && isDegreeProgram(item)) {
+    if (view.value.tab === Tab.DEGREEPROGRAM && isDegreeProgram(item)) {
       return `${item.name}`;
     }
-    if (plannerSettings.value.tab === Tab.ROOM && isRoom(item)) {
+    if (view.value.tab === Tab.ROOM && isRoom(item)) {
       return `${item.number}: ${item.name}`;
     }
     return "";
@@ -491,22 +455,8 @@
   }
 
   function selectTab(tab: Tab) {
-    plannerSettings.value.tab = tab;
+    viewStore.selectTab(tab);
   }
-
-  watch(
-    () => plannerSettings.value.tab,
-    () => {
-      plannerSettings.value.selectedId = selectedId.value;
-    }
-  );
-
-  watch(
-    () => plannerSettings.value.selectedId,
-    () => {
-      handleSelect(plannerSettings.value.selectedId);
-    }
-  );
 </script>
 
 <style lang="css" scoped>

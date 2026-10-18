@@ -52,7 +52,12 @@ export async function getGlobalGalacticApi() {
   }
 }
 
-export async function getAllApplicationData() {
+/**
+ * Lädt alle Daten vom Server in die Stores. Fehler werden hier behandelt.
+ *
+ * @returns ob alle Daten vollständig geladen wurden
+ */
+export async function getAllApplicationData(): Promise<boolean> {
   const { handleError } = useNotification();
   try {
     const degreeProgramStore = useDegreeProgramStore();
@@ -160,14 +165,16 @@ export async function getAllApplicationData() {
       const template = mapApiTemplate(apiTemplate, courses);
       templateStore.templateMap.set(template.id, template);
     });
+    return true;
   } catch (error) {
     // Ohne Verbindung zum Server wird statt der Anwendung die Fehleransicht angezeigt
     if (useConnectionStore().reportConnectionError(error)) {
       // eslint-disable-next-line no-console
       console.error(error);
-      return;
+      return false;
     }
     const e = error as Error;
     handleError(e, "Fehler beim initialen Laden der Daten!");
+    return false;
   }
 }

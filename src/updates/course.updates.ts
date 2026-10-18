@@ -10,11 +10,12 @@ import { mapApiCourse } from "@/api/util";
 import { useLecturerStore } from "@/stores/lecturerStore";
 import { useStudyGroupStore } from "@/stores/studyGroupStore";
 import { useColorStore } from "@/stores/colorStore";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useViewStore } from "@/stores/viewStore";
+import { Tab } from "@/enums/enums";
 
 export function handleCourse(operation: UpdateOperation, data: CourseApiData | number) {
   const courseStore = useCourseStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
   let c;
   let mappedC;
   switch (operation) {
@@ -44,8 +45,7 @@ export function handleCourse(operation: UpdateOperation, data: CourseApiData | n
     case "delete":
       c = data as number;
       courseStore.courseMap.delete(c);
-      settingsStore.removeOldDataFromLocalStorageState();
-      settingsStore.removeOldDataFromQueryParameters();
+      viewStore.forget(Tab.COURSE, c);
       break;
   }
 }

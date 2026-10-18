@@ -8,6 +8,8 @@ import { useNotification } from "@/composables/useNotification";
 import type { DegreeProgram } from "@/models/DegreeProgram";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import { Tab } from "@/enums/enums";
+import { useViewStore } from "./viewStore";
 
 /**
  * Pinia Store für die Verwaltung von Studiengängen
@@ -22,7 +24,7 @@ import { computed, ref } from "vue";
 export const useDegreeProgramStore = defineStore("degreePrograms", () => {
   const degreeProgramMap = ref<Map<number, DegreeProgram>>(new Map<number, DegreeProgram>());
   const degreeProgramList = computed(() => Array.from(degreeProgramMap.value.values()));
-  const selectedDegreeProgramId = ref<number | null>(null);
+  const viewStore = useViewStore();
   const { showError, showSuccess, handleError } = useNotification();
 
   /**
@@ -90,7 +92,6 @@ export const useDegreeProgramStore = defineStore("degreePrograms", () => {
   async function deleteDegreeProgram(id: number) {
     try {
       await deleteDegreeProgramApi(id);
-      selectedDegreeProgramId.value = null;
       showSuccess("Studiengang erfolgreich gelöscht.");
     } catch (error) {
       const e = error as Error;
@@ -99,25 +100,12 @@ export const useDegreeProgramStore = defineStore("degreePrograms", () => {
   }
 
   /**
-   * Ermittelt den gewählte Studiengang.
-   *
-   * @returns ausgewählter Studiengang
+   * Die in der Ansicht (URL) ausgewählte Ressource, undefined falls keine gewählt ist oder sie nicht existiert
    */
   const selectedDegreeProgram = computed(() => {
-    const index = degreeProgramList.value.findIndex(
-      degreeProgram => degreeProgram.id === selectedDegreeProgramId.value
-    );
-    return degreeProgramList.value[index];
+    const id = viewStore.view.selected[Tab.DEGREEPROGRAM];
+    return id === undefined ? undefined : degreeProgramMap.value.get(id);
   });
-
-  /**
-   * Dient der Auswahl eines Studiengangs.
-   *
-   * @param id - eindeutige ID des Studiengangs
-   */
-  function selectDegreeProgram(id: number | null) {
-    selectedDegreeProgramId.value = id;
-  }
 
   return {
     degreeProgramMap,
@@ -127,7 +115,5 @@ export const useDegreeProgramStore = defineStore("degreePrograms", () => {
     updateDegreeProgram,
     deleteDegreeProgram,
     selectedDegreeProgram,
-    selectDegreeProgram,
-    selectedDegreeProgramId,
   };
 });

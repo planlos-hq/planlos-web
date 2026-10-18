@@ -18,24 +18,24 @@ import { mapCourseUpdatesToApi } from "@/api/util";
 import type { TimeSlot } from "@/models/TimeSlot";
 import { deleteTimeSlotApi, removeRoomFromTimeSlotApi } from "@/api/timeslot";
 import { useTimeSlotStore } from "./timeSlotStore";
+import { Tab } from "@/enums/enums";
+import { useViewStore } from "./viewStore";
 
 /**
  * Pinia Store für die Verwaltung von Kursen
  *
  * @returns Ein Objekt mit:
  * - courseList: Reaktive Liste aller Kurse
- * - selectedCourseId: Id des (in der Verwaltungsansicht) ausgewählten Kurses
- * - selectedCourse: Ermittelt den gewählten Kurs anhand der selectedCourseId
+ * - selectedCourse: Ausgewählte Ressource laut Ansicht (URL)
  * - createCourse: Funktion zum Erstellen eines neuen Kurses
  * - readCourse: Funktion zum Abrufen eines Kurses per ID
  * - updateCourse: Funktion zum Aktualisieren eines Kurses
  * - deleteCourse: Funktion zum Löschen eines Kurses
- * - selectCourse: Funktion zum Setzen von selectedCourseId
  */
 export const useCourseStore = defineStore("courses", () => {
   const courseMap = ref<Map<number, Course>>(new Map<number, Course>());
   const courseList = computed(() => Array.from(courseMap.value.values()));
-  const selectedCourseId = ref<number | null>(null);
+  const viewStore = useViewStore();
   const highlightedCourseId = ref<number | null>(null);
   const highlightTrigger = ref(0);
   const { handleError, showError, showSuccess } = useNotification();
@@ -224,7 +224,6 @@ export const useCourseStore = defineStore("courses", () => {
       }
 
       await deleteCourseApi(id);
-      selectedCourseId.value = null;
       showSuccess("Veranstaltung erfolgreich gelöscht!");
     } catch (error) {
       const e = error as Error;
@@ -233,22 +232,11 @@ export const useCourseStore = defineStore("courses", () => {
   }
 
   /**
-   * Dient der Auswahl eines Kurses. Setzt dafür die selectedCourseId.
-   *
-   * @param id - eindeutige ID eines Kurses
-   */
-  function selectCourse(id: number | null) {
-    selectedCourseId.value = id;
-  }
-
-  /**
-   * Ermittelt den gewählte Kurs basierend auf der selectedCourseId
-   *
-   * @returns ausgewählter Kurs
+   * Die in der Ansicht (URL) ausgewählte Ressource, undefined falls keine gewählt ist oder sie nicht existiert
    */
   const selectedCourse = computed(() => {
-    const index = courseList.value.findIndex(course => course.id === selectedCourseId.value);
-    return courseList.value[index];
+    const id = viewStore.view.selected[Tab.COURSE];
+    return id === undefined ? undefined : courseMap.value.get(id);
   });
 
   /**
@@ -299,7 +287,6 @@ export const useCourseStore = defineStore("courses", () => {
   return {
     courseList,
     courseMap,
-    selectedCourseId,
     selectedCourse,
     highlightedCourseId,
     highlightTrigger,
@@ -308,7 +295,6 @@ export const useCourseStore = defineStore("courses", () => {
     readCourse,
     updateCourse,
     deleteCourse,
-    selectCourse,
     highlightCourse,
     assignTimeSlotToCourse,
     coursesByStudyGroup,

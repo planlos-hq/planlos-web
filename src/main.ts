@@ -8,6 +8,7 @@ import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
 import "./assets/main.css";
 import "./assets/vuecal-override.css";
 import { getAllApplicationData } from "./api/globalGalactic";
+import { pruneView } from "./router/pruneView";
 
 async function init() {
   const pinia = createPinia();
@@ -15,9 +16,12 @@ async function init() {
 
   app.use(pinia);
   app.use(router);
+  // Erste Navigation inkl. Wiederherstellen der gespeicherten Ansicht (router/index.ts) abwarten,
+  // bevor Stores und Komponenten die Ansicht lesen
+  await router.isReady();
 
   try {
-    await getAllApplicationData();
+    if (await getAllApplicationData()) await pruneView();
   } catch (e) {
     // eslint-disable-next-line no-console
     console.log(e);

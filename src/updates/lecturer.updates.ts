@@ -2,11 +2,12 @@ import type { LecturerApiData } from "@/api/types";
 import type { UpdateOperation } from "./types.updates";
 import { useLecturerStore } from "@/stores/lecturerStore";
 import { mapApiLecturer } from "@/api/util";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useViewStore } from "@/stores/viewStore";
+import { Tab } from "@/enums/enums";
 
 export function handleLecturer(operation: UpdateOperation, data: LecturerApiData | number) {
   const lecturerStore = useLecturerStore();
-  const settingsStore = useSettingsStore();
+  const viewStore = useViewStore();
   let l: LecturerApiData | number;
   switch (operation) {
     case "create":
@@ -20,8 +21,7 @@ export function handleLecturer(operation: UpdateOperation, data: LecturerApiData
     case "delete":
       l = data as number;
       lecturerStore.lecturerMap.delete(l);
-      settingsStore.removeOldDataFromLocalStorageState();
-      settingsStore.removeOldDataFromQueryParameters();
+      viewStore.forget(Tab.LECTURER, l);
       break;
     case "update":
       l = data as LecturerApiData;

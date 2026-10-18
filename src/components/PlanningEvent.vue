@@ -67,15 +67,13 @@
   import { School, User, Users } from "lucide-vue-next";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
   import type { ResourceConflict } from "@/models/ResourceConflict";
-  import { useSettingsStore } from "@/stores/settingsStore";
-  import { useQueryParameters } from "@/composables/useQueryParameters";
+  import { useViewStore } from "@/stores/viewStore";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
 
   const courseStore = useCourseStore();
   const timeSlotStore = useTimeSlotStore();
   const conflictStore = useResourceConflictStore();
-  const settingsStore = useSettingsStore();
-  const queryParams = useQueryParameters();
+  const viewStore = useViewStore();
   const { calculateFontColor } = useColor();
 
   const black = "#000000";
@@ -172,10 +170,7 @@
    * @param conflict - Ressourcenkonlikt
    */
   function openView(conflict: ResourceConflict) {
-    const tab = settingsStore.resourceTypeToTab(conflict.resourceType);
-    const url = queryParams.getConflictUrl(tab, conflict.resourceId);
-
-    window.location.assign(url);
+    viewStore.openConflict(conflict.resourceType, conflict.resourceId);
   }
 </script>
 

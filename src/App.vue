@@ -6,16 +6,15 @@
     -->
     <toast-init />
     <connection-error-view v-if="connectionStore.hasConnectionError" />
-    <router-view v-else-if="ready" />
+    <router-view v-else />
   </b-app>
 </template>
 
 <script setup lang="ts">
   import { RouterView } from "vue-router";
   import { BApp } from "bootstrap-vue-next";
-  import { defineComponent, onMounted, ref } from "vue";
+  import { defineComponent } from "vue";
   import { useNotification } from "./composables/useNotification";
-  import { useSettingsStore } from "./stores/settingsStore";
   import { useConnectionStore } from "./stores/connectionStore";
   import ConnectionErrorView from "./views/ConnectionErrorView.vue";
 
@@ -28,14 +27,7 @@
     },
   });
 
-  const settingsStore = useSettingsStore();
   const connectionStore = useConnectionStore();
-  const ready = ref(false);
-
-  onMounted(async () => {
-    settingsStore.initializeSettings();
-    ready.value = true;
-  });
 </script>
 
 <style>

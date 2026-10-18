@@ -1,4 +1,4 @@
-import { defineStore, storeToRefs } from "pinia";
+import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type { StudyGroup } from "@/models/StudyGroup";
 import { createStudyGroupApi, deleteStudyGroupApi, updateStudyGroupApi } from "@/api/studyGroup";
@@ -6,8 +6,8 @@ import type { StudyGroupApiData } from "@/api/types";
 import { mapStudyGroupUpdatesToApi } from "@/api/util";
 import { useNotification } from "@/composables/useNotification";
 import { useCourseStore } from "./courseStore";
-import { useSettingsStore } from "./settingsStore";
-import { useDegreeProgramStore } from "./degreeProgramStore";
+import { Tab } from "@/enums/enums";
+import { useViewStore } from "./viewStore";
 
 /**
  * Pinia Store für die Verwaltung von Studiengruppen
@@ -17,23 +17,17 @@ import { useDegreeProgramStore } from "./degreeProgramStore";
  * - schedules: Stundenpläne der in den Einstellungen ausgewählten Studiengruppen
  * - degreeProgramSchedules: Stundenpläne aller Studiengruppen des ausgewählten Studiengangs
  * - studyGroupsByDegreeProgram: Funktion zum Ermitteln aller Studiengruppen eines Studiengangs
- * - selectedStudyGroupId: Id der (in der Verwaltungsansicht) ausgewählten Studiengruppe
- * - selectedStudyGroup: Ermittelt die gewählte Studiengruppe anhand der selectedStudyGroupId
+ * - selectedStudyGroup: Ausgewählte Ressource laut Ansicht (URL)
  * - createStudyGroup: Funktion zum Erstellen einer neuen Studiengruppe
  * - readStudyGroup: Funktion zum Abrufen einer Studiengruppe per ID
  * - updateStudyGroup: Funktion zum Aktualisieren einer Studiengruppe
  * - deleteStudyGroup: Funktion zum Löschen einer Studiengruppe
- * - selectStudyGroup: Funktion zum Setzen der selectedStudyGroupId
  */
 export const useStudyGroupStore = defineStore("studyGroups", () => {
   const studyGroupMap = ref<Map<number, StudyGroup>>(new Map<number, StudyGroup>());
   const studyGroupList = computed(() => Array.from(studyGroupMap.value.values()));
-  const selectedStudyGroupId = ref<number | null>(null);
+  const viewStore = useViewStore();
   const { showError, showSuccess, handleError } = useNotification();
-
-  const settingsStore = useSettingsStore();
-  const degreeProgramStore = useDegreeProgramStore();
-  const { plannerSettings } = storeToRefs(settingsStore);
 
   /**
    * Erstellt eine neue Studiengruppe und fügt sie zur Studiengruppenliste hinzu
@@ -103,8 +97,6 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
   async function deleteStudyGroup(id: number) {
     try {
       await deleteStudyGroupApi(id);
-      selectedStudyGroupId.value = null;
-
       showSuccess("Studiengruppe erfolgreich gelöscht!");
     } catch (error) {
       const e = error as Error;
@@ -134,7 +126,7 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
    * @returns Eine Liste von Stundenplänen mit ID, Label und CSS-Klasse
    */
   const schedules = computed(() => {
-    const selectedStudyGroupList = [...plannerSettings.value.studyGroups]
+    const selectedStudyGroupList = viewStore.studyGroups
       .map(id => studyGroupMap.value.get(id))
       .filter(s => s !== undefined);
 
@@ -162,40 +154,27 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
    *
    * @returns Eine Liste von Stundenplänen mit ID, Label und CSS-Klasse
    */
+  // Eigenes Computed für die ID, damit andere URL-Änderungen die Spalten nicht neu berechnen
+  const selectedDegreeProgramId = computed(() => viewStore.view.selected[Tab.DEGREEPROGRAM]);
+
   const degreeProgramSchedules = computed(() => {
-    const degreeProgramId = degreeProgramStore.selectedDegreeProgramId;
-    if (degreeProgramId === null) return [];
+    const degreeProgramId = selectedDegreeProgramId.value;
+    if (degreeProgramId === undefined) return [];
     return toSchedules(studyGroupsByDegreeProgram.value(degreeProgramId));
   });
 
   function highlightGroup(studyGroup: StudyGroup): boolean {
-    const { readCourse, selectedCourseId } = useCourseStore();
-
-    if (selectedCourseId === null) return false;
-    const course = readCourse(selectedCourseId);
+    const course = useCourseStore().selectedCourse;
     if (course === undefined) return false;
     return course.studyGroups.includes(studyGroup);
   }
 
   /**
-   * Dient der Auswahl einer Studiengruppe. Setzt dafür die selectedStudyGroupId.
-   *
-   * @param id - eindeutige ID einer Studiengruppe
-   */
-  function selectStudyGroup(id: number | null) {
-    selectedStudyGroupId.value = id;
-  }
-
-  /**
-   * Ermittelt die gewählte Studiengruppe basierend auf der selectedStudyGroupId
-   *
-   * @returns ausgewählte Studiengruppe
+   * Die in der Ansicht (URL) ausgewählte Ressource, undefined falls keine gewählt ist oder sie nicht existiert
    */
   const selectedStudyGroup = computed(() => {
-    const index = studyGroupList.value.findIndex(
-      studyGroup => studyGroup.id === selectedStudyGroupId.value
-    );
-    return studyGroupList.value[index];
+    const id = viewStore.view.selected[Tab.STUDYGROUP];
+    return id === undefined ? undefined : studyGroupMap.value.get(id);
   });
 
   return {
@@ -204,12 +183,10 @@ export const useStudyGroupStore = defineStore("studyGroups", () => {
     schedules,
     degreeProgramSchedules,
     studyGroupsByDegreeProgram,
-    selectedStudyGroupId,
     selectedStudyGroup,
     createStudyGroup,
     readStudyGroup,
     updateStudyGroup,
     deleteStudyGroup,
-    selectStudyGroup,
   };
 });

@@ -14,7 +14,7 @@
         </b-form-group>
 
         <p class="heading">Pausenzeiten anzeigen?</p>
-        <b-form-checkbox v-model="plannerSettings.showBreaks" />
+        <b-form-checkbox v-model="showBreaks" />
 
         <div class="csv-section">
           <p class="heading">Import / Export</p>
@@ -81,12 +81,12 @@
   import type { StudyGroup } from "@/models/StudyGroup";
   import ResetButton from "./IconButtons/ResetButton.vue";
   import { storeToRefs } from "pinia";
-  import { useSettingsStore } from "@/stores/settingsStore";
+  import { useViewStore } from "@/stores/viewStore";
   import { Upload } from "lucide-vue-next";
   import ImportExportDialog from "./ImportExportDialog.vue";
 
-  const store = useSettingsStore();
-  const { plannerSettings } = storeToRefs(store);
+  const viewStore = useViewStore();
+  const { view } = storeToRefs(viewStore);
 
   const showImportExportDialog = ref(false);
 
@@ -144,13 +144,17 @@
   });
 
   const selected = computed({
-    get: () =>
-      weekdays.map(w => w.value).filter(day => !plannerSettings.value.hiddenWeekdays.includes(day)),
+    get: () => weekdays.map(w => w.value).filter(day => !view.value.hiddenWeekdays.includes(day)),
     set: (value: WeekDays[]) => {
-      plannerSettings.value.hiddenWeekdays = weekdays
-        .map(w => w.value)
-        .filter(day => !value.includes(day));
+      viewStore.patch({
+        hiddenWeekdays: weekdays.map(w => w.value).filter(day => !value.includes(day)),
+      });
     },
+  });
+
+  const showBreaks = computed({
+    get: () => view.value.showBreaks,
+    set: (value: boolean) => viewStore.patch({ showBreaks: value }),
   });
 
   const emit = defineEmits<{
@@ -164,22 +168,22 @@
   function isStudyGroupSelected(item: StudyGroup) {
     const studyGroup = studyGroupStore.readStudyGroup(item.id);
     if (!studyGroup) return false;
-    return plannerSettings.value.studyGroups.has(studyGroup.id);
+    return view.value.studyGroups.includes(studyGroup.id);
   }
 
   function toggleStudyGroup(id: number) {
     const studyGroup = studyGroupStore.readStudyGroup(id);
     if (!studyGroup) return;
 
-    if (plannerSettings.value.studyGroups.has(studyGroup.id)) {
-      plannerSettings.value.studyGroups.delete(studyGroup.id);
-    } else {
-      plannerSettings.value.studyGroups.add(studyGroup.id);
-    }
+    viewStore.update(({ studyGroups }) => ({
+      studyGroups: studyGroups.includes(studyGroup.id)
+        ? studyGroups.filter(g => g !== studyGroup.id)
+        : [...studyGroups, studyGroup.id],
+    }));
   }
 
   function resetSelectedStudyGroup() {
-    plannerSettings.value.studyGroups.clear();
+    viewStore.patch({ studyGroups: [] });
   }
 
   function resetWeekdays() {

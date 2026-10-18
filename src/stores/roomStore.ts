@@ -4,24 +4,24 @@ import type { Room } from "@/models/Room";
 import { createRoomApi, deleteRoomApi, updateRoomApi } from "@/api/room";
 import { useNotification } from "@/composables/useNotification";
 import { mapRoomUpdatesToApi } from "@/api/util";
+import { Tab } from "@/enums/enums";
+import { useViewStore } from "./viewStore";
 
 /**
  * Pinia Store für die Verwaltung von Räumen
  *
  * @returns Ein Objekt mit:
  * - roomList: Reaktive Liste aller Räume
- * - selectedRoomId: Id des (in der Verwaltungsansicht) ausgewählten Raumes
- * - selectedRoom: Ermittelt den gewählten Raum anhand der selectedRoomId
+ * - selectedRoom: Ausgewählte Ressource laut Ansicht (URL)
  * - createRoom: Funktion zum Erstellen eines neuen Raums
  * - readRoom: Funktion zum Abrufen eines Raums per ID
  * - updateRoom: Funktion zum Aktualisieren eines Raums
  * - deleteRoom: Funktion zum Löschen eines Raums
- * - selectRoom: Funktion zum Setzen der selectedRoomId
  */
 export const useRoomStore = defineStore("rooms", () => {
   const roomMap = ref<Map<number, Room>>(new Map<number, Room>());
   const roomList = computed(() => Array.from(roomMap.value.values()));
-  const selectedRoomId = ref<number | null>(null);
+  const viewStore = useViewStore();
   const { showSuccess, handleError, showError } = useNotification();
 
   /**
@@ -92,22 +92,11 @@ export const useRoomStore = defineStore("rooms", () => {
   }
 
   /**
-   * Dient der Auswahl eines Raums. Setzt dafür die selectedRoomId.
-   *
-   * @param id - eindeutige ID des Raums
-   */
-  function selectRoom(id: number | null) {
-    selectedRoomId.value = id;
-  }
-
-  /**
-   * Ermittelt den gewählte Raum basierend auf der selectedRoomId
-   *
-   * @returns ausgewählter Raum
+   * Die in der Ansicht (URL) ausgewählte Ressource, undefined falls keine gewählt ist oder sie nicht existiert
    */
   const selectedRoom = computed(() => {
-    const index = roomList.value.findIndex(room => room.id === selectedRoomId.value);
-    return roomList.value[index];
+    const id = viewStore.view.selected[Tab.ROOM];
+    return id === undefined ? undefined : roomMap.value.get(id);
   });
 
   return {
@@ -116,8 +105,6 @@ export const useRoomStore = defineStore("rooms", () => {
     readRoom,
     updateRoom,
     deleteRoom,
-    selectedRoomId,
-    selectRoom,
     selectedRoom,
     roomList,
   };

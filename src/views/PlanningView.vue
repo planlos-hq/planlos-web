@@ -5,11 +5,11 @@
     </template>
     <template #content>
       <vue-cal
-        :key="plannerSettings.tab"
+        :key="view.tab"
         v-bind="timetableConfig"
         :schedules="calendarSchedules"
         :events="vueCalEventStore.calendarEvents"
-        :hide-weekdays="plannerSettings.hiddenWeekdays"
+        :hide-weekdays="viewStore.hiddenWeekdays"
         :special-hours="breaks"
         @event-drop="onEventDrop"
         @event-resize="isValidResize"
@@ -18,7 +18,7 @@
         <template #event="{ event }">
           <planning-event
             :event="event"
-            :filter-type="plannerSettings.tab"
+            :filter-type="view.tab"
             @click="handleEventClick(event)"
             @remove-event="deleteTimeSlot(event)"
           />
@@ -56,8 +56,7 @@
   import { Tab } from "@/enums/enums";
   import { handleUpdate } from "@/updates/handler.updates";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
-  import { useQueryParameters } from "@/composables/useQueryParameters";
-  import { useSettingsStore } from "@/stores/settingsStore";
+  import { useViewStore } from "@/stores/viewStore";
   import { storeToRefs } from "pinia";
   import type { Color } from "@/models/Color";
   import ImpressumDialog from "@/components/ImpressumDialog.vue";
@@ -69,10 +68,8 @@
   const courseStore = useCourseStore();
   const studyGroupStore = useStudyGroupStore();
   const resourceConflictStore = useResourceConflictStore();
-  const settingsStore = useSettingsStore();
-  const { plannerSettings } = storeToRefs(settingsStore);
-
-  const queryParams = useQueryParameters();
+  const viewStore = useViewStore();
+  const { view } = storeToRefs(viewStore);
 
   const showEventOverview = ref<boolean>(false);
 
@@ -107,20 +104,8 @@
     courseStore.updateCourse(selectedEvent.value.courseId, { color: color });
   }
 
-  watch(
-    plannerSettings,
-    settings => {
-      queryParams.setQueryParameters(settings);
-
-      if (!settings.temp) {
-        settingsStore.setLocalStorage(settings);
-      }
-    },
-    { deep: true }
-  );
-
   const calendarSchedules = computed(() => {
-    switch (plannerSettings.value.tab) {
+    switch (view.value.tab) {
       case Tab.COURSE:
         return studyGroupStore.schedules;
       case Tab.DEGREEPROGRAM:
@@ -131,7 +116,7 @@
   });
 
   const breaks = computed(() => {
-    return plannerSettings.value.showBreaks ? specialHours : {};
+    return view.value.showBreaks ? specialHours : {};
   });
 
   // Festgelegte Grenzen für Start- und Endzeitwerte
@@ -202,7 +187,7 @@
       event.preventDefault();
       return;
     }
-    courseStore.selectCourse(item.id);
+    viewStore.select(Tab.COURSE, item.id, "replace");
     event.dataTransfer?.setData("event", JSON.stringify(item));
     event.dataTransfer?.setData("cursor-grab-at", event.offsetY.toString());
   }

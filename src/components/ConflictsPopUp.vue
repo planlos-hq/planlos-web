@@ -1,5 +1,5 @@
 <template>
-  <b-modal title="Ressourcen-Konflikte" size="md" scrollable>
+  <b-modal v-model="show" title="Ressourcen-Konflikte" size="md" scrollable>
     <template #footer><div></div></template>
 
     <search-bar @new-search="searchConflicts" />
@@ -114,16 +114,15 @@
   import { BModal, BFormCheckbox, BButtonGroup, BButton } from "bootstrap-vue-next";
   import { computed, ref, type ComputedRef } from "vue";
   import SearchBar from "./SearchBar.vue";
-  import { useQueryParameters } from "@/composables/useQueryParameters";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
   import { Calendar, Clock, School, User, Users } from "lucide-vue-next";
-  import { useSettingsStore } from "@/stores/settingsStore";
+  import { useViewStore } from "@/stores/viewStore";
 
   const conflictStore = useResourceConflictStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
-  const settingsStore = useSettingsStore();
-  const queryParams = useQueryParameters();
+  const viewStore = useViewStore();
+  const show = defineModel<boolean>();
 
   const query = ref<string>("");
   const selectedResourceType = ref<ResourceType | "">("");
@@ -229,10 +228,8 @@
   }
 
   function openConflictView(conflict: ResourceConflictDisplay) {
-    const tab = settingsStore.resourceTypeToTab(conflict.resourceType);
-    const url = queryParams.getConflictUrl(tab, conflict.resourceId);
-
-    window.location.assign(url);
+    viewStore.openConflict(conflict.resourceType, conflict.resourceId);
+    show.value = false;
   }
 </script>
 

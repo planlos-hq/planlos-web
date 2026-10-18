@@ -135,6 +135,7 @@
   import { Upload, Download, FileText } from "lucide-vue-next";
   import { useNotification } from "@/composables/useNotification";
   import { getAllApplicationData } from "@/api/globalGalactic";
+  import { pruneView } from "@/router/pruneView";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
@@ -221,7 +222,7 @@
         importResult.value = { success: true, message: "Import erfolgreich abgeschlossen." };
         showSuccess("Daten erfolgreich importiert!");
         selectedFile.value = null;
-        await getAllApplicationData();
+        if (await getAllApplicationData()) await pruneView();
         const conflictStore = useResourceConflictStore();
         await conflictStore.loadResourceConflicts();
         await conflictStore.loadIgnoredResourceConflicts();

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { createApp } from "vue";
 import { createPinia, setActivePinia } from "pinia";
+import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import { useRoomStore } from "@/stores/roomStore";
 import type { Room } from "@/models/Room";
 
@@ -28,8 +30,18 @@ vi.mock("@/api/room", () => ({
   listRoomsApi: () => mockListRoomsApi(),
 }));
 
-beforeEach(() => {
-  setActivePinia(createPinia());
+let router: Router;
+
+// roomStore liest die Auswahl über den viewStore aus der URL und braucht dafür einen Router
+beforeEach(async () => {
+  router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/", component: { render: () => null } }],
+  });
+  const pinia = createPinia();
+  createApp({}).use(pinia).use(router);
+  setActivePinia(pinia);
+  await router.push("/");
   vi.clearAllMocks();
 });
 
@@ -215,39 +227,28 @@ describe("deleteRoom", () => {
   });
 });
 
-describe("selectRoom", () => {
-  it("setzt selectedRoomId auf ausgewählte ID", () => {
-    const store = useRoomStore();
-
-    store.selectRoom(1);
-
-    expect(store.selectedRoomId).toBe(1);
-  });
-
-  it("setzt selectedRoomId auf null", () => {
-    const store = useRoomStore();
-
-    store.selectRoom(null);
-
-    expect(store.selectedRoomId).toBeNull();
-  });
-});
-
 describe("selectedRoom (computed)", () => {
   const fakeRoom: Room = { id: 1, number: "5.001", name: "fakeRoom", seats: 12 };
 
-  it("wenn selectedRoomId gesetzt, dann wird Raum zurückgegeben", () => {
+  it("wenn ein Raum in der URL ausgewählt ist, dann wird er zurückgegeben", async () => {
+    await router.push("/?tab=room&room=1");
     const store = useRoomStore();
     store.roomMap.set(fakeRoom.id, fakeRoom);
-    store.selectRoom(1);
 
     expect(store.selectedRoom).toEqual(fakeRoom);
   });
 
-  it("wenn selectedRoomId nicht in roomList, dann undefined", () => {
+  it("wenn die ausgewählte ID nicht existiert, dann undefined", async () => {
+    await router.push("/?tab=room&room=5");
     const store = useRoomStore();
     store.roomMap.set(fakeRoom.id, fakeRoom);
-    store.selectRoom(5);
+
+    expect(store.selectedRoom).toBeUndefined();
+  });
+
+  it("wenn nichts ausgewählt ist, dann undefined", () => {
+    const store = useRoomStore();
+    store.roomMap.set(fakeRoom.id, fakeRoom);
 
     expect(store.selectedRoom).toBeUndefined();
   });
