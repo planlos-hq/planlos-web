@@ -18,6 +18,11 @@
   font-weight: normal;
 }
 
+/* Ausgewählten Tag beim Klick auf eine Spalte nicht hervorheben */
+.vuecal__cell--selected::before {
+  background-color: transparent !important;
+}
+
 /* Don't show actual time */
 .vuecal__now-line {
   display: none !important;
