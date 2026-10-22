@@ -3,6 +3,7 @@ import { createApp } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import { useRoomStore } from "@/stores/roomStore";
+import { handleRoom } from "@/updates/room.updates";
 import type { Room } from "@/models/Room";
 
 const mockShowSuccess = vi.fn();
@@ -49,14 +50,19 @@ describe("createRoom", () => {
   const fakeRoom: Room = { id: 1, number: "5.001", name: "fakeRoom", seats: 12 };
   const newRoom = { number: "5.001", name: "fakeRoom", seats: 12 };
 
-  it("bei Erfolg neuer Raum in roomList", async () => {
+  // Der Store ändert die Liste nicht selbst: neue Räume kommen über das Live-Update (SSE) herein,
+  // damit alle geöffneten Tabs denselben Stand haben.
+  it("bei Erfolg wird der Raum angelegt und kommt per Live-Update in roomList", async () => {
     mockCreateRoomApi.mockResolvedValue(fakeRoom);
     const store = useRoomStore();
 
     await store.createRoom(newRoom);
 
-    expect(store.roomList).toHaveLength(1);
-    expect(store.roomList[0]).toEqual(fakeRoom);
+    expect(mockCreateRoomApi).toHaveBeenCalledWith("5.001", "fakeRoom", 12);
+    expect(store.roomList).toHaveLength(0);
+
+    handleRoom("create", { id: 1, number: "5.001", name: "fakeRoom", seats: 12, extra_data: {} });
+    expect(store.roomList).toEqual([{ ...fakeRoom, extraData: {} }]);
   });
 
   it("bei Erfolg wird showSuccess aufgerufen", async () => {
@@ -122,14 +128,24 @@ describe("updateRoom", () => {
   const updates = { number: "5.101", name: "updatedFakeRoom" };
   const updatedRoom: Room = { id: 1, number: "5.101", name: "updatedFakeRoom", seats: 12 };
 
-  it("bei Erfolg wird Raum in roomList aktualisiert", async () => {
+  it("bei Erfolg wird der Raum aktualisiert und per Live-Update in roomList übernommen", async () => {
     mockUpdateRoomApi.mockResolvedValue(updatedRoom);
     const store = useRoomStore();
-    store.roomMap.set(fakeRoom.id, fakeRoom);
+    store.roomMap.set(fakeRoom.id, { ...fakeRoom });
 
     await store.updateRoom(1, updates);
 
-    expect(store.roomList[0]).toEqual(updatedRoom);
+    expect(mockUpdateRoomApi).toHaveBeenCalledWith(1, { number: "5.101", name: "updatedFakeRoom" });
+    expect(store.roomList[0]).toEqual(fakeRoom);
+
+    handleRoom("update", {
+      id: 1,
+      number: "5.101",
+      name: "updatedFakeRoom",
+      seats: 12,
+      extra_data: {},
+    });
+    expect(store.roomList[0]).toEqual({ ...updatedRoom, extraData: {} });
   });
 
   it("bei Erfolg wird showSuccess aufgerufen", async () => {
@@ -169,19 +185,24 @@ describe("updateRoom", () => {
     await store.updateRoom(1, updates);
 
     expect(mockHandleError).toHaveBeenCalledOnce();
+    expect(mockUpdateRoomApi).not.toHaveBeenCalled();
   });
 });
 
 describe("deleteRoom", () => {
   const fakeRoom: Room = { id: 1, number: "5.001", name: "fakeRoom", seats: 12 };
 
-  it("bei Erfolg wird Raum aus roomList entfernt", async () => {
+  it("bei Erfolg wird der Raum gelöscht und per Live-Update aus roomList entfernt", async () => {
     mockDeleteRoomApi.mockResolvedValue(undefined);
     const store = useRoomStore();
     store.roomMap.set(fakeRoom.id, fakeRoom);
 
     await store.deleteRoom(1);
 
+    expect(mockDeleteRoomApi).toHaveBeenCalledWith(1);
+    expect(store.roomList).toHaveLength(1);
+
+    handleRoom("delete", 1);
     expect(store.roomList).toHaveLength(0);
   });
 

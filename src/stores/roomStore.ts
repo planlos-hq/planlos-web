@@ -64,6 +64,9 @@ export const useRoomStore = defineStore("rooms", () => {
    */
   async function updateRoom(id: number, updates: Partial<Omit<Room, "id">>) {
     try {
+      if (!roomMap.value.has(id)) {
+        throw new Error("Raum nicht gefunden.");
+      }
       const apiUpdates = mapRoomUpdatesToApi(updates);
       await updateRoomApi(id, apiUpdates);
       showSuccess("Raum erfolgreich aktualisiert!");
