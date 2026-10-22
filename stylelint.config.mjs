@@ -11,6 +11,8 @@ export default {
     "selector-class-pattern": "^[a-z][a-z0-9-]+$",
     "selector-id-pattern": "^[a-z][a-z0-9-]+$",
     "max-nesting-depth": 3,
+    // Vue-Pseudoklassen in <style scoped>
+    "selector-pseudo-class-no-unknown": [true, { ignorePseudoClasses: ["deep", "global", "slotted"] }],
 
     "order/properties-alphabetical-order": true,
   },

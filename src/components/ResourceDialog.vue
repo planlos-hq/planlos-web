@@ -647,7 +647,6 @@
     width: 34px;
   }
 
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
   .selector-panel :deep(.icon-button) {
     border-radius: 10px;
   }
@@ -665,6 +664,5 @@
 
   .duplicate-item {
     overflow-wrap: anywhere;
-    word-break: break-word;
   }
 </style>

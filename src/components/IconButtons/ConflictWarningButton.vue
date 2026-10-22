@@ -36,33 +36,28 @@
   }
 
   .button-wrapper {
-    position: relative;
     display: inline-block;
+    position: relative;
   }
 
   .badge {
-    position: absolute;
-    right: -6px;
-    bottom: -6px;
-
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-
-    min-width: 1.4rem;
-    height: 1.4rem;
-    padding: 0 0.4rem;
+    background-color: #ffbc48;
     border-radius: 50%;
-
+    bottom: -6px;
+    color: white;
+    display: inline-flex;
+    flex-shrink: 0;
     font-size: 0.75rem;
     font-weight: 600;
+    height: 1.4rem;
+    justify-content: center;
     line-height: 1;
-
-    color: white;
-    background-color: #ffbc48;
-
     margin-left: 0.4rem;
-    flex-shrink: 0;
+    min-width: 1.4rem;
+    padding: 0 0.4rem;
+    position: absolute;
+    right: -6px;
   }
 
   .normal {

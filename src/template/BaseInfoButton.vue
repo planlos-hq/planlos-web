@@ -29,26 +29,26 @@
 
 <style scoped>
   .info-btn-container {
-    position: fixed;
     bottom: 10px;
+    position: fixed;
     z-index: 1000;
   }
 
   .info-btn {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgb(255 255 255 / 80%);
     border: 1px solid #eee;
     border-radius: 4px;
-    padding: 3px 6px;
-    font-size: 11px;
     color: #888;
     cursor: pointer;
+    font-size: 11px;
+    opacity: 1;
+    padding: 3px 6px;
     transition: all 0.2s;
     width: 80px;
-    opacity: 1;
   }
 
   .info-btn:hover {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(255 255 255 / 90%);
     border-color: #ccc;
     color: #333;
     opacity: 1;

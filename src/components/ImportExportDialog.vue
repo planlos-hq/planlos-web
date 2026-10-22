@@ -227,10 +227,12 @@
         await conflictStore.loadResourceConflicts();
         await conflictStore.loadIgnoredResourceConflicts();
       } else if (response.status === 400 || response.status === 422) {
-        const data = await response.json().catch(() => null);
+        const data: { message?: unknown } | null = await response.json().catch(() => null);
+        const serverMessage = typeof data?.message === "string" ? data.message : "";
         importResult.value = {
           success: false,
-          message: data?.message || `Fehler beim Import (${response.statusText})`,
+          message:
+            serverMessage !== "" ? serverMessage : `Fehler beim Import (${response.statusText})`,
         };
       } else {
         importResult.value = {
@@ -292,35 +294,35 @@
 
 <style scoped>
   .drop-zone {
+    align-items: center;
     border: 2px dashed var(--bs-border-color);
     border-radius: 0.5rem;
-    padding: 2rem 1rem;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 0.5rem;
-    cursor: pointer;
+    padding: 2rem 1rem;
+    text-align: center;
     transition:
       border-color 0.2s,
       background-color 0.2s;
-    text-align: center;
   }
 
   .drop-zone:hover,
   .drop-zone--over {
+    background-color: rgb(var(--bs-primary-rgb), 0.05);
     border-color: var(--bs-primary);
-    background-color: rgba(var(--bs-primary-rgb), 0.05);
   }
 
   .drop-zone--selected {
+    background-color: rgb(var(--bs-success-rgb), 0.05);
     border-color: var(--bs-success);
-    background-color: rgba(var(--bs-success-rgb), 0.05);
   }
 
   .export-item {
-    padding: 0.75rem;
     border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
+    padding: 0.75rem;
     transition: background-color 0.2s;
   }
 

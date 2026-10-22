@@ -10,7 +10,7 @@ import { LecturerKind } from "@/enums/enums";
 
 vi.mock("@/composables/useNotification", () => ({
   useNotification: () => ({
-    handleApiErrors: vi.fn(async (response: Response) => {
+    handleApiErrors: vi.fn(async () => {
       throw new Error("API Fehler");
     }),
   }),
@@ -19,7 +19,7 @@ vi.mock("@/composables/useNotification", () => ({
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
-function mockResponse(body: any, ok = true, status = 200) {
+function mockResponse(body: unknown, ok = true, status = 200) {
   return {
     ok,
     status,

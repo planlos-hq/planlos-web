@@ -25,7 +25,7 @@ export function useAbbreviation() {
 
   /**
    * Kürzt ein Wort vor einem Vokal ab, der auf einen Konsonanten folgt
-   * (z.B. "Wirtschaftsinformatik" -> "Wirtsch.").
+   * (z.B. "Wirtschaftsinformatik" → "Wirtsch.").
    * @param word - Das abzukürzende Wort
    * @returns Das abgekürzte Wort mit Punkt
    */
@@ -69,7 +69,10 @@ export function useAbbreviation() {
       words[index] = abbreviateWord(word);
     }
 
-    return words.map(addSoftHyphens).join(" ").replace(/\/(?=\S)/g, "/\u200B");
+    return words
+      .map(addSoftHyphens)
+      .join(" ")
+      .replace(/\/(?=\S)/g, "/\u200B");
   }
 
   return {
