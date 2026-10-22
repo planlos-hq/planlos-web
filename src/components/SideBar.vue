@@ -12,7 +12,7 @@
 
   <div class="sidebar-container">
     <div
-      class="d-flex flex-row justify-content-center justify-content-evenly mt-3 mb-3 top-actions"
+      class="d-flex flex-row flex-wrap justify-content-center justify-content-evenly mt-3 mb-3 top-actions"
     >
       <add-button @click="showCreateDialog = true" :size="28" title="Hinzufügen" />
       <settings-button @click="showSettings = !showSettings" :size="28" title="Einstellungen" />
@@ -23,6 +23,26 @@
         title="Konflikte anzeigen"
       />
       <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />
+      <undo-button
+        :size="28"
+        :class="{ disabled: !undoStore.undoLabel }"
+        :title="
+          undoStore.undoLabel
+            ? `Rückgängig: ${undoStore.undoLabel} (Strg+Z)`
+            : 'Nichts rückgängig zu machen'
+        "
+        @click="undoStore.undo()"
+      />
+      <redo-button
+        :size="28"
+        :class="{ disabled: !undoStore.redoLabel }"
+        :title="
+          undoStore.redoLabel
+            ? `Wiederholen: ${undoStore.redoLabel} (Strg+Umschalt+Z)`
+            : 'Nichts zu wiederholen'
+        "
+        @click="undoStore.redo()"
+      />
     </div>
 
     <div class="temp-container" v-if="view.temp">
@@ -195,7 +215,7 @@
   import TimeTableSettings from "./TimeTableSettings.vue";
   import SettingsButton from "./IconButtons/SettingsButton.vue";
   import AddButton from "./IconButtons/AddButton.vue";
-  import { BButton, BFormCheckbox } from "bootstrap-vue-next";
+  import { BButton } from "bootstrap-vue-next";
   import ResourceDialog from "./ResourceDialog.vue";
   import { useLecturerStore } from "@/stores/lecturerStore";
   import { useRoomStore } from "@/stores/roomStore";
@@ -229,6 +249,9 @@
   import ConflictsPopUp from "./ConflictsPopUp.vue";
   import ShareSettingsDialog from "./ShareSettingsDialog.vue";
   import ShareButton from "./IconButtons/ShareButton.vue";
+  import UndoButton from "./IconButtons/UndoButton.vue";
+  import RedoButton from "./IconButtons/RedoButton.vue";
+  import { useUndoStore } from "@/stores/undoStore";
   import {
     CalendarCheck,
     CalendarX,
@@ -255,6 +278,7 @@
   const studyGroupStore = useStudyGroupStore();
   const conflictStore = useResourceConflictStore();
   const viewStore = useViewStore();
+  const undoStore = useUndoStore();
 
   const { view } = storeToRefs(viewStore);
 
@@ -576,25 +600,24 @@
     padding: 2px;
   }
 
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
   .detail-pane :deep(.icon-button) {
     padding: 8px;
   }
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
+
   .detail-pane :deep(.delete-action) {
     background-color: var(--bs-danger);
     color: white;
   }
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
+
   .detail-pane :deep(.delete-action:hover) {
     background-color: var(--bs-danger-border-subtle, #b02a37);
   }
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
+
   .detail-pane :deep(.edit-action) {
     background-color: var(--button-color);
     color: white;
   }
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
+
   .detail-pane :deep(.edit-action:hover) {
     background-color: var(--bs-secondary-border-subtle, #565e64);
   }
@@ -610,15 +633,9 @@
     width: 42px;
   }
 
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
   .top-actions :deep(.icon-button),
   .panel :deep(.icon-button) {
     border-radius: 10px;
-  }
-
-  .top-actions > *:not(:first-child):hover {
-    background-color: var(--hover-color);
-    cursor: pointer;
   }
 
   .panel {
@@ -650,6 +667,17 @@
   .panel > *:hover {
     background-color: var(--hover-color);
     cursor: pointer;
+  }
+
+  .top-actions > *:not(:first-child):hover {
+    background-color: var(--hover-color);
+    cursor: pointer;
+  }
+
+  .top-actions > .disabled:not(:first-child) {
+    background-color: transparent;
+    cursor: default;
+    opacity: 0.35;
   }
 
   .temp-container {

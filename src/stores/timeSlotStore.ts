@@ -2,14 +2,12 @@ import { defineStore } from "pinia";
 import type { TimeSlot } from "@/models/TimeSlot";
 import {
   assignRoomToTimeSlotApi,
-  createTimeSlotApi,
-  deleteTimeSlotApi,
   getTimeSlotRoomsApi,
   removeRoomFromTimeSlotApi,
-  updateTimeSlotApi,
 } from "@/api/timeslot";
 import { calculateDuration, mapTimeSlotUpdatesToApi, transformStartDate } from "@/api/util";
 import { useNotification } from "@/composables/useNotification";
+import { timeSlotResource, timeSlotRoomResource, useUndoStore } from "@/stores/undoStore";
 import type { Room } from "@/models/Room";
 import type { Course } from "@/models/Course";
 import { ref } from "vue";
@@ -38,13 +36,20 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
    * @returns gibt ein TimeSlot-Objekt zurück
    */
   async function createTimeSlot(courseId: number, start: Date, end: Date) {
+    const undoStore = useUndoStore();
     try {
-      await createTimeSlotApi(
-        courseId,
-        start.getDay(),
-        transformStartDate(start),
-        calculateDuration(start, end)
-      );
+      await undoStore.perform("Termin anlegen", [
+        {
+          kind: "create",
+          resource: timeSlotResource,
+          data: {
+            course: courseId,
+            weekday: start.getDay(),
+            at: transformStartDate(start),
+            duration: calculateDuration(start, end),
+          },
+        },
+      ]);
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Erstellen des Zeitslots.");
@@ -73,9 +78,14 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
    *
    * @param id - eindeutige ID des TimeSlots
    * @param updates - neue Werte für das TimeSlot-Objekt (ohne ID)
-   * @param timeSlots - Liste der TimeSlots
+   * @param label - Bezeichnung im Rückgängig-Verlauf
    */
-  async function updateTimeSlot(id: number, updates: Partial<Omit<TimeSlot, "id">>) {
+  async function updateTimeSlot(
+    id: number,
+    updates: Partial<Omit<TimeSlot, "id">>,
+    label = "Termin ändern"
+  ) {
+    const undoStore = useUndoStore();
     const timeSlot = readTimeSlot(id);
     if (!timeSlot) {
       handleError(
@@ -91,7 +101,14 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
     // optimistisch aktualisiert: Kalender zeigt die Änderung sofort (muss vor dem ersten await passieren)
     Object.assign(timeSlot, updates);
     try {
-      await updateTimeSlotApi(id, apiUpdates);
+      await undoStore.perform(label, [
+        {
+          kind: "update",
+          resource: timeSlotResource,
+          id,
+          set: apiUpdates,
+        },
+      ]);
     } catch (error) {
       Object.assign(timeSlot, previous);
       handleError(error as Error, "Fehler beim Aktualisieren des Zeitslots");
@@ -104,19 +121,44 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
    * @param id - eindeutige ID des TimeSlots
    */
   async function deleteTimeSlot(id: number) {
+    const undoStore = useUndoStore();
     try {
       const timeSlot = readTimeSlot(id);
       //Verhindert doppeltes Löschen bei Server-Sent-Events
       if (!timeSlot) {
         return;
       }
-      for (const room of timeSlot.rooms) {
-        await removeRoomFromTimeSlotApi(id, room.id);
-      }
-      await deleteTimeSlotApi(id);
+      // Räume im selben Schritt löschen, damit Rückgängig sie wiederherstellt
+      await undoStore.perform("Termin löschen", [
+        ...timeSlot.rooms.map(room => ({
+          kind: "delete" as const,
+          resource: timeSlotRoomResource,
+          data: { time_slot: id, room: room.id },
+        })),
+        { kind: "delete", resource: timeSlotResource, id },
+      ]);
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Löschen des Zeitslots.");
+    }
+  }
+
+  /**
+   * Weist einem TimeSlot einen Raum zu bzw. entfernt die Zuweisung.
+   *
+   * @param timeSlotId - ID des Zeitslots
+   * @param roomId - ID des Raums
+   * @param assign - true: zuweisen, false: entfernen
+   */
+  async function setRoomAssignment(timeSlotId: number, roomId: number, assign: boolean) {
+    const undoStore = useUndoStore();
+    const data = { time_slot: timeSlotId, room: roomId };
+    try {
+      await undoStore.perform(assign ? "Raum zuweisen" : "Raum entfernen", [
+        { kind: assign ? "create" : "delete", resource: timeSlotRoomResource, data },
+      ]);
+    } catch (error) {
+      handleError(error as Error, "Fehler bei der Raumzuweisung.");
     }
   }
 
@@ -175,6 +217,7 @@ export const useTimeSlotStore = defineStore("timeSlots", () => {
     readTimeSlot,
     updateTimeSlot,
     deleteTimeSlot,
+    setRoomAssignment,
     updateRoomAssignmentsForTimeSlot,
     setTimeSlots,
   };

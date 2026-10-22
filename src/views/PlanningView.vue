@@ -62,6 +62,7 @@
   import ImpressumDialog from "@/components/ImpressumDialog.vue";
   import AboutDialog from "@/components/AboutDialog.vue";
   import HelpDialog from "@/components/HelpDialog.vue";
+  import { useUndoShortcuts } from "@/composables/useUndoShortcuts";
 
   const vueCalEventStore = useVueCalEventStore();
   const timeSlotStore = useTimeSlotStore();
@@ -70,6 +71,7 @@
   const resourceConflictStore = useResourceConflictStore();
   const viewStore = useViewStore();
   const { view } = storeToRefs(viewStore);
+  useUndoShortcuts();
 
   const showEventOverview = ref<boolean>(false);
 
@@ -101,7 +103,7 @@
     if (!selectedEvent.value) {
       return;
     }
-    courseStore.updateCourse(selectedEvent.value.courseId, { color: color });
+    courseStore.setCourseColor(selectedEvent.value.courseId, color);
   }
 
   const calendarSchedules = computed(() => {
@@ -245,7 +247,11 @@
         start.setMinutes(start.getMinutes() - durationMin);
       }
 
-      timeSlotStore.updateTimeSlot(event.timeSlotId, { start: start, end: end });
+      timeSlotStore.updateTimeSlot(
+        event.timeSlotId,
+        { start: start, end: end },
+        "Termin verschieben"
+      );
     }
     // Vue-Cal soll nichts selbst ändern - Store ist Source of Truth
     return false;
@@ -275,10 +281,11 @@
    *  - event: das veränderte VueCalEvent
    */
   function onEventResize({ event }: { event: VueCalEvent }) {
-    timeSlotStore.updateTimeSlot(event.timeSlotId, {
-      start: new Date(event.start),
-      end: new Date(event.end),
-    });
+    timeSlotStore.updateTimeSlot(
+      event.timeSlotId,
+      { start: new Date(event.start), end: new Date(event.end) },
+      "Dauer ändern"
+    );
     // Kein `false`: Sonst setzt vue-cal das Event nach diesem Handler auf die alte Zeit zurück.
     // vue-cal übernimmt dieselben Zeiten wie der Store, bei einem API-Fehler setzt der Rollback beide zurück.
   }

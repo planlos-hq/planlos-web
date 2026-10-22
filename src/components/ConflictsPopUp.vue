@@ -194,12 +194,11 @@
   function mapIgnoredConflictForDisplay(
     conflict: IgnoredResourceConflict
   ): ResourceConflictDisplay {
-    const courseA = courseStore.readCourse(
-      timeSlotStore.timeSlotCourseAssignmentsMap.get(conflict.slotA) ?? -1
-    );
-    const courseB = courseStore.readCourse(
-      timeSlotStore.timeSlotCourseAssignmentsMap.get(conflict.slotB) ?? -1
-    );
+    // ohne Fehlermeldung: der Termin kann gerade gelöscht worden sein
+    const courseOf = (slotId: number) =>
+      courseStore.courseMap.get(timeSlotStore.timeSlotCourseAssignmentsMap.get(slotId) ?? -1);
+    const courseA = courseOf(conflict.slotA);
+    const courseB = courseOf(conflict.slotB);
     const display: ResourceConflictDisplay = {
       id: conflictStore.getKey(conflict),
       courseA: `${courseA !== undefined ? `${courseA.number}_${courseA.abbreviation}` : "-"}`,
@@ -235,7 +234,7 @@
 
 <style scoped lang="css">
   .no-conflict-message {
-    margin: 100px 0px;
+    margin: 100px 0;
     text-align: center;
   }
 

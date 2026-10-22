@@ -1,12 +1,8 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type { Color } from "@/models/Color";
-import {
-  createCourseColorApi,
-  deleteCourseColorApi,
-  updateCourseColorApi,
-} from "@/api/courseColor";
 import { useNotification } from "@/composables/useNotification";
+import { colorResource, useUndoStore } from "@/stores/undoStore";
 
 /**
  * Pinia Store für die Verwaltung von Farben für die Farblegende
@@ -30,11 +26,15 @@ export const useColorStore = defineStore("colors", () => {
    * @param hex - Hexcode der die Farbe beinhaltet
    */
   async function createColor(name: string, hex: string) {
+    const undoStore = useUndoStore();
     try {
-      const upperCaseColorValue = hex.toUpperCase();
-      const color = await createCourseColorApi(name, upperCaseColorValue);
-
-      if (color === undefined) return;
+      await undoStore.perform("Farbe anlegen", [
+        {
+          kind: "create",
+          resource: colorResource,
+          data: { name, hex: hex.toUpperCase() },
+        },
+      ]);
 
       showSuccess("Farbe erfolgreich hinzugefügt!");
     } catch (error) {
@@ -66,12 +66,20 @@ export const useColorStore = defineStore("colors", () => {
    * @example updateColor(12345, \{ name: "Neue Farbe", hex: "#FFFFFF" \});
    */
   async function updateColor(id: number, updates: Partial<Omit<Color, "id">>) {
+    const undoStore = useUndoStore();
     try {
       if (updates.hex !== undefined) {
         updates.hex = updates.hex.toUpperCase();
       }
 
-      await updateCourseColorApi(id, updates);
+      await undoStore.perform("Farbe bearbeiten", [
+        {
+          kind: "update",
+          resource: colorResource,
+          id,
+          set: { ...updates },
+        },
+      ]);
       showSuccess("Farbe erfolgreich aktualisiert!");
     } catch (error) {
       const e = error as Error;
@@ -85,8 +93,9 @@ export const useColorStore = defineStore("colors", () => {
    * @param id - Die eindeutige ID der Farbe
    */
   async function deleteColor(id: number) {
+    const undoStore = useUndoStore();
     try {
-      await deleteCourseColorApi(id);
+      await undoStore.perform("Farbe löschen", [{ kind: "delete", resource: colorResource, id }]);
 
       showSuccess("Farbe erfolgreich gelöscht!");
     } catch (error) {

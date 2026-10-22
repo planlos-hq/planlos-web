@@ -20,6 +20,8 @@ import { deleteTimeSlotApi, removeRoomFromTimeSlotApi } from "@/api/timeslot";
 import { useTimeSlotStore } from "./timeSlotStore";
 import { Tab } from "@/enums/enums";
 import { useViewStore } from "./viewStore";
+import type { Color } from "@/models/Color";
+import { courseColorResource, useUndoStore } from "@/stores/undoStore";
 
 /**
  * Pinia Store für die Verwaltung von Kursen
@@ -186,6 +188,45 @@ export const useCourseStore = defineStore("courses", () => {
   }
 
   /**
+   * Färbt eine Veranstaltung ein bzw. setzt ihre Farbe zurück
+   *
+   * @param courseId - ID der Veranstaltung
+   * @param color - neue Farbe, undefined zum Zurücksetzen
+   */
+  async function setCourseColor(courseId: number, color: Color | undefined) {
+    const course = courseMap.value.get(courseId);
+    if (!course || course.color?.id === color?.id) return;
+    const undoStore = useUndoStore();
+    try {
+      await undoStore.perform(color ? "Farbe zuweisen" : "Farbe zurücksetzen", [
+        ...(course.color
+          ? [
+              {
+                kind: "delete" as const,
+                resource: courseColorResource,
+                data: { course: courseId, color: course.color.id },
+              },
+            ]
+          : []),
+        ...(color
+          ? [
+              {
+                kind: "create" as const,
+                resource: courseColorResource,
+                data: { course: courseId, color: color.id },
+              },
+            ]
+          : []),
+      ]);
+      showSuccess(
+        color ? "Veranstaltung erfolgreich aktualisiert!" : "Farbe erfolgreich zurückgesetzt."
+      );
+    } catch (error) {
+      handleError(error as Error, "Fehler beim Ändern der Farbe.");
+    }
+  }
+
+  /**
    * Löscht einen Kurs aus der Liste
    *
    * @param id - Die ID des zu löschenden Kurses
@@ -294,6 +335,7 @@ export const useCourseStore = defineStore("courses", () => {
     findCoursesByNumber,
     readCourse,
     updateCourse,
+    setCourseColor,
     deleteCourse,
     highlightCourse,
     assignTimeSlotToCourse,

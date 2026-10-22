@@ -136,14 +136,8 @@
   import { useLecturerStore } from "@/stores/lecturerStore";
   import ColorBox from "./ColorBox.vue";
   import ResetButton from "./IconButtons/ResetButton.vue";
-  import {
-    assignLecturerToCourseApi,
-    removeColorFromCourseApi,
-    removeLecturerFromCourseApi,
-  } from "@/api/course";
-  import { useNotification } from "@/composables/useNotification";
+  import { assignLecturerToCourseApi, removeLecturerFromCourseApi } from "@/api/course";
   import DeleteButton from "./IconButtons/DeleteButton.vue";
-  import { assignRoomToTimeSlotApi, removeRoomFromTimeSlotApi } from "@/api/timeslot";
   import { timetableConfig } from "@/timetableConfig.ts";
 
   const colorStore = useColorStore();
@@ -275,11 +269,11 @@
     if (!room || !timeSlot.value) {
       return;
     }
-    if (!timeSlotResourceForm.isItemSelected(room, timeSlotResourceForm.formData.value.rooms)) {
-      await removeRoomFromTimeSlotApi(timeSlot.value.id, roomId);
-    } else {
-      await assignRoomToTimeSlotApi(timeSlot.value.id, roomId);
-    }
+    const assign = timeSlotResourceForm.isItemSelected(
+      room,
+      timeSlotResourceForm.formData.value.rooms
+    );
+    await timeSlotStore.setRoomAssignment(timeSlot.value.id, roomId, assign);
   }
 
   /**
@@ -359,7 +353,11 @@
       return;
     }
 
-    timeSlotStore.updateTimeSlot(timeSlot.id, { start: newStartDate, end: newEndDate });
+    timeSlotStore.updateTimeSlot(
+      timeSlot.id,
+      { start: newStartDate, end: newEndDate },
+      "Uhrzeit ändern"
+    );
   }
 
   async function resetColor() {
@@ -369,13 +367,7 @@
     if (!course.value.color) {
       return;
     }
-    const { handleError, showSuccess } = useNotification();
-    try {
-      await removeColorFromCourseApi(course.value.id, course.value.color.id);
-      showSuccess("Farbe erfolgreich zurückgesetzt.");
-    } catch (e) {
-      handleError(e as Error, "Fehler beim Zurücksetzen der Farbe");
-    }
+    await courseStore.setCourseColor(course.value.id, undefined);
   }
 </script>
 
