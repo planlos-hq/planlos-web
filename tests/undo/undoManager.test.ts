@@ -173,4 +173,49 @@ describe("Ignorierte Konflikte", () => {
     await m.redo();
     expect(send.mock.calls[2]![0].ops.map(o => o.resource)).toEqual(["courseTimeSlot"]);
   });
+
+  it("Wiederholen ignoriert einen Konflikt erneut, den das Rückgängigmachen aufgelöst hat", async () => {
+    const send = mockSend();
+    const m = new UndoManager(send, resources);
+    const moved = { ...slot, at: "10:00:00" };
+
+    // Verschieben erzeugt einen Konflikt, der danach (außerhalb des Verlaufs) ignoriert wird
+    send.mockResolvedValueOnce(response({ before: slot, after: moved }));
+    await m.perform("Termin verschieben", move("10:00"));
+
+    // Zurückschieben löst den Konflikt, der Server entfernt die Markierung mit
+    send.mockResolvedValueOnce(
+      response({
+        before: moved,
+        after: slot,
+        cascade: [{ resource: "ignoredResourceConflict", row: ignore }],
+      })
+    );
+    await m.undo();
+
+    send.mockResolvedValueOnce(
+      response({ before: slot, after: moved }, { before: null, after: ignore })
+    );
+    await m.redo();
+    expect(send.mock.calls[2]![0].ops).toEqual([
+      {
+        kind: "update",
+        resource: "courseTimeSlot",
+        id: 5,
+        set: { at: "10:00:00" },
+        expect: { at: "08:00:00" },
+      },
+      { kind: "create", resource: "ignoredResourceConflict", data: ignore },
+    ]);
+
+    // erneutes Rückgängig entfernt die Markierung wieder
+    send.mockResolvedValueOnce(
+      response({ before: ignore, after: null }, { before: moved, after: slot })
+    );
+    await m.undo();
+    expect(send.mock.calls[3]![0].ops.map(o => `${o.kind} ${o.resource}`)).toEqual([
+      "delete ignoredResourceConflict",
+      "update courseTimeSlot",
+    ]);
+  });
 });
