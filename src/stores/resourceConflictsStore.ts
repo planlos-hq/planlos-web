@@ -2,8 +2,10 @@ import {
   getAllResourceConflictsApi,
   getCourseLecturerViolationsApi,
   getConflictsForResourceApi,
+  getIgnoredCourseLecturerViolationsApi,
   getIgnoredResourceConflictsApi,
   ignoreResourceConflictApi,
+  setCourseLecturerViolationIgnoredApi,
   unignoreResourceConflictApi,
 } from "@/api/resourceConflicts";
 import type {
@@ -43,8 +45,10 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     Array.from(ignoredResourceConflictsMap.value.values())
   );
 
-  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind
+  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind (ohne ignorierte)
   const courseLecturerViolations = ref<CourseLecturerViolation[]>([]);
+  // IDs der Veranstaltungen, deren Laboringenieur-Hinweis ignoriert wird
+  const ignoredCourseLecturerViolations = ref<number[]>([]);
   const labEngineerOnlyCourseIds = computed(
     () => new Set(courseLecturerViolations.value.map(v => v.courseId))
   );
@@ -143,15 +147,35 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   }
 
   /**
-   * Lädt alle Veranstaltungen, denen nur Laboringenieure zugewiesen sind, in den Store
+   * Lädt alle Veranstaltungen, denen nur Laboringenieure zugewiesen sind, samt ignorierter in den Store
    */
   async function loadCourseLecturerViolations() {
-    const apiViolations = await getCourseLecturerViolationsApi();
-    if (apiViolations === undefined) {
+    const [apiViolations, ignored] = await Promise.all([
+      getCourseLecturerViolationsApi(),
+      getIgnoredCourseLecturerViolationsApi(),
+    ]);
+    if (apiViolations === undefined || ignored === undefined) {
       showError("Fehler", "Veranstaltungen nur mit Laboringenieur konnten nicht geladen werden");
       return;
     }
     courseLecturerViolations.value = apiViolations.map(v => mapApiCourseLecturerViolation(v));
+    ignoredCourseLecturerViolations.value = ignored;
+  }
+
+  /**
+   * Ignoriert den Laboringenieur-Hinweis einer Veranstaltung bzw. hebt das Ignorieren auf.
+   *
+   * @param courseId - ID der Veranstaltung
+   * @param ignore - true: ignorieren, false: Ignorieren aufheben
+   */
+  async function setCourseLecturerViolationIgnored(courseId: number, ignore: boolean) {
+    try {
+      if (await setCourseLecturerViolationIgnoredApi(courseId, ignore)) {
+        await loadCourseLecturerViolations();
+      }
+    } catch (error) {
+      handleError(error as Error, "Ein Fehler ist bei der Bearbeitung des Konflikts aufgetreten.");
+    }
   }
 
   /**
@@ -403,11 +427,13 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     ignoredResourceConflictsList,
     timeSlotConflictsMap,
     courseLecturerViolations,
+    ignoredCourseLecturerViolations,
     labEngineerOnlyCourseIds,
     getKey,
     loadResourceConflicts,
     loadIgnoredResourceConflicts,
     loadCourseLecturerViolations,
+    setCourseLecturerViolationIgnored,
     ignoreConflict,
     unignoreConflict,
     addResourceConflictToMap,

@@ -67,7 +67,7 @@
       :key="`lab-engineer-only-${violation.courseId}`"
       class="mt-2 mb-1 p-3 border rounded d-flex justify-content-between align-items-center"
     >
-      <div>
+      <div :class="{ 'opacity-50': !violation.active }">
         <div class="d-flex align-items-center gap-2">
           <calendar :size="20" />
           {{ violation.course }}
@@ -78,11 +78,25 @@
         </div>
       </div>
 
-      <calendar-search-button
-        :size="32"
-        :ignored="false"
-        @click="openLabEngineerView(violation.courseId)"
-      />
+      <div class="d-flex align-items-center gap-3">
+        <calendar-search-button
+          :size="32"
+          :ignored="!violation.active"
+          @click="openLabEngineerView(violation.courseId)"
+        />
+
+        <b-form-checkbox
+          switch
+          :model-value="violation.active"
+          @update:model-value="
+            () =>
+              conflictStore.setCourseLecturerViolationIgnored(violation.courseId, violation.active)
+          "
+          size="lg"
+          class="opacity-100"
+        >
+        </b-form-checkbox>
+      </div>
     </div>
 
     <div
@@ -181,29 +195,55 @@
     return displayedConflicts;
   });
 
-  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind (Lehrperson, nicht ignorierbar)
+  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind (Filter: Lehrperson)
   const labEngineerOnlyDisplay = computed(() => {
     if (selectedResourceType.value !== "" && selectedResourceType.value !== "lecturer") return [];
-    if (selectedStatus.value === "ignored") return [];
-    return conflictStore.courseLecturerViolations
-      .map(v => {
-        const course = courseStore.courseMap.get(v.courseId);
-        return {
-          courseId: v.courseId,
-          course: `${v.number}_${course?.abbreviation ?? v.name}`,
-          name: v.name,
-          message:
-            v.labEngineerCount === 1
-              ? "Nur ein Laboringenieur, keine weitere Lehrperson"
-              : `Nur ${v.labEngineerCount} Laboringenieure, keine weitere Lehrperson`,
-        };
-      })
-      .filter(
-        v =>
-          query.value.length === 0 ||
-          v.course.toLowerCase().includes(query.value) ||
-          v.name.toLowerCase().includes(query.value)
-      );
+    const message = (count: number) =>
+      count === 1
+        ? "Nur ein Laboringenieur, keine weitere Lehrperson"
+        : `Nur ${count} Laboringenieure, keine weitere Lehrperson`;
+
+    const active = conflictStore.courseLecturerViolations.map(v => {
+      const course = courseStore.courseMap.get(v.courseId);
+      return {
+        courseId: v.courseId,
+        course: `${v.number}_${course?.abbreviation ?? v.name}`,
+        name: v.name,
+        message: message(v.labEngineerCount),
+        active: true,
+      };
+    });
+    // ohne Fehlermeldung: die Veranstaltung kann gerade gelöscht worden sein
+    const ignored = conflictStore.ignoredCourseLecturerViolations.flatMap(courseId => {
+      const course = courseStore.courseMap.get(courseId);
+      if (!course) return [];
+      const labEngineers = course.lecturers.filter(l => l.kind === LecturerKind.LAB_ENGINEER);
+      return [
+        {
+          courseId,
+          course: `${course.number}_${course.abbreviation}`,
+          name: course.name,
+          message: message(labEngineers.length),
+          active: false,
+        },
+      ];
+    });
+
+    let violations;
+    if (selectedStatus.value === "active") {
+      violations = active;
+    } else if (selectedStatus.value === "ignored") {
+      violations = ignored;
+    } else {
+      violations = [...active, ...ignored];
+    }
+
+    return violations.filter(
+      v =>
+        query.value.length === 0 ||
+        v.course.toLowerCase().includes(query.value) ||
+        v.name.toLowerCase().includes(query.value)
+    );
   });
 
   function matchesQuery(conflict: ResourceConflictDisplay) {

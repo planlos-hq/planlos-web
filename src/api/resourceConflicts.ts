@@ -209,6 +209,54 @@ export async function getCourseLecturerViolationsApi() {
 }
 
 /**
+ * Lädt die IDs aller Veranstaltungen, deren Laboringenieur-Hinweis ignoriert wird.
+ *
+ * @returns IDs der ignorierten Veranstaltungen
+ */
+export async function getIgnoredCourseLecturerViolationsApi() {
+  const response = await fetch(`${API_BASE_URL}/course-lecturer-violations/ignored`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return;
+  }
+
+  const ignored: { course_id: number }[] = await response.json();
+  return ignored.map(i => i.course_id);
+}
+
+/**
+ * Markiert bzw. entfernt den Laboringenieur-Hinweis einer Veranstaltung als "ignoriert".
+ *
+ * @param courseId - ID der Veranstaltung
+ * @param ignore - true: ignorieren, false: Ignorieren aufheben
+ * @returns true bei Erfolg
+ */
+export async function setCourseLecturerViolationIgnoredApi(courseId: number, ignore: boolean) {
+  const response = await fetch(`${API_BASE_URL}/course-lecturer-violations/ignore`, {
+    method: ignore ? "POST" : "DELETE",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ course_id: courseId }),
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Lädt alle ignorierten Constraint-Verletzungen aus der Datenbank.
  *
  * @returns alle Ressourcen-Konflikte
