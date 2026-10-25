@@ -273,6 +273,8 @@
       id: conflictStore.getKey(conflict),
       courseA: `${courseA !== undefined ? `${courseA.number}_${courseA.abbreviation}` : "-"}`,
       courseB: `${courseB !== undefined ? `${courseB.number}_${courseB.abbreviation}` : "-"}`,
+      slotA: conflict.slotA,
+      slotB: conflict.slotB,
       resourceType: conflict.resourceType,
       resourceId: conflict.resourceId,
       resourceLabel: conflictStore.getResourceTypeString(conflict.resourceType),
@@ -295,6 +297,8 @@
       id: conflictStore.getKey(conflict),
       courseA: `${courseA !== undefined ? `${courseA.number}_${courseA.abbreviation}` : "-"}`,
       courseB: `${courseB !== undefined ? `${courseB.number}_${courseB.abbreviation}` : "-"}`,
+      slotA: conflict.slotA,
+      slotB: conflict.slotB,
       resourceType: conflict.resourceType,
       resourceId: conflict.resourceId,
       resourceLabel: conflictStore.getResourceTypeString(conflict.resourceType),
@@ -318,9 +322,12 @@
     query.value = searchText.trim().toLowerCase();
   }
 
-  function openConflictView(conflict: ResourceConflictDisplay) {
-    viewStore.openConflict(conflict.resourceType, conflict.resourceId);
+  async function openConflictView(conflict: ResourceConflictDisplay) {
     show.value = false;
+    await viewStore.openConflict(conflict.resourceType, conflict.resourceId);
+    // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
+    await nextTick();
+    courseStore.highlightTimeSlots([conflict.slotA, conflict.slotB]);
   }
 
   /**

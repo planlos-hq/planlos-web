@@ -33,6 +33,8 @@ export type ResourceConflictDisplay = {
   id: string;
   courseA: string;
   courseB: string;
+  slotA: number;
+  slotB: number;
   resourceType: ResourceType;
   resourceId: number;
   resourceLabel: string;

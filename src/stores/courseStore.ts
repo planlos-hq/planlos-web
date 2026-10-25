@@ -39,6 +39,8 @@ export const useCourseStore = defineStore("courses", () => {
   const courseList = computed(() => Array.from(courseMap.value.values()));
   const viewStore = useViewStore();
   const highlightedCourseId = ref<number | null>(null);
+  // alternativ einzelne Timeslots, z. B. die beiden eines Konflikts
+  const highlightedTimeSlotIds = ref<number[]>([]);
   const highlightTrigger = ref(0);
   const { handleError, showError, showSuccess } = useNotification();
 
@@ -322,6 +324,18 @@ export const useCourseStore = defineStore("courses", () => {
    */
   function highlightCourse(courseId: number) {
     highlightedCourseId.value = courseId;
+    highlightedTimeSlotIds.value = [];
+    highlightTrigger.value++;
+  }
+
+  /**
+   * Lässt einzelne Timeslots im Kalender kurz aufleuchten, z. B. die beiden eines Konflikts.
+   *
+   * @param timeSlotIds - IDs der Timeslots, die hervorgehoben werden sollen
+   */
+  function highlightTimeSlots(timeSlotIds: number[]) {
+    highlightedCourseId.value = null;
+    highlightedTimeSlotIds.value = timeSlotIds;
     highlightTrigger.value++;
   }
 
@@ -330,6 +344,7 @@ export const useCourseStore = defineStore("courses", () => {
     courseMap,
     selectedCourse,
     highlightedCourseId,
+    highlightedTimeSlotIds,
     highlightTrigger,
     createCourse,
     findCoursesByNumber,
@@ -338,6 +353,7 @@ export const useCourseStore = defineStore("courses", () => {
     setCourseColor,
     deleteCourse,
     highlightCourse,
+    highlightTimeSlots,
     assignTimeSlotToCourse,
     coursesByStudyGroup,
   };

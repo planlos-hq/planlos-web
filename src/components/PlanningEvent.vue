@@ -63,7 +63,7 @@
   import type { VueCalEvent } from "@/models/VueCalEvent";
   import { useCourseStore } from "@/stores/courseStore";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
-  import { computed, ref, watch } from "vue";
+  import { computed, nextTick, ref, watch } from "vue";
   import { Tab } from "@/enums/enums";
   import { useColor } from "@/composables/useColor";
   import { BPopover } from "bootstrap-vue-next";
@@ -127,13 +127,17 @@
     }
   });
 
-  // Lässt das Event kurz aufleuchten, wenn in der Sidebar das Kalender-Icon des zugehörigen Kurses angeklickt wurde.
+  // Lässt das Event kurz aufleuchten, wenn in der Sidebar das Kalender-Icon des zugehörigen Kurses
+  // oder bei einem Konflikt das Kalender-Such-Icon angeklickt wurde.
   const isBlinking = ref(false);
   let blinkTimeout: ReturnType<typeof setTimeout> | undefined;
   watch(
     () => courseStore.highlightTrigger,
     () => {
-      if (courseStore.highlightedCourseId !== props.event.courseId) return;
+      const highlighted =
+        courseStore.highlightedCourseId === props.event.courseId ||
+        courseStore.highlightedTimeSlotIds.includes(props.event.timeSlotId);
+      if (!highlighted) return;
       isBlinking.value = false;
       requestAnimationFrame(() => {
         isBlinking.value = true;
@@ -171,12 +175,15 @@
 
   /**
    * Öffnet im aktuellen Tab die Ansicht der spezifischen Ressource, die
-   * den Konflikt verursacht.
+   * den Konflikt verursacht, und lässt die beiden Termine des Konflikts aufleuchten.
    *
    * @param conflict - Ressourcenkonlikt
    */
-  function openView(conflict: ResourceConflict) {
-    viewStore.openConflict(conflict.resourceType, conflict.resourceId);
+  async function openView(conflict: ResourceConflict) {
+    await viewStore.openConflict(conflict.resourceType, conflict.resourceId);
+    // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
+    await nextTick();
+    courseStore.highlightTimeSlots([conflict.slotA, conflict.slotB]);
   }
 </script>
 
