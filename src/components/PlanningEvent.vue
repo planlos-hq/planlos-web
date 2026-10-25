@@ -33,6 +33,10 @@
       </div>
 
       <p class="m-0 mt-1 p-0 small-text" v-if="hasConflict">Konflikte:</p>
+      <div v-if="event.labEngineerOnly" class="mt-1 mb-1 super-small-text">
+        <flask-conical :size="20" />
+        Nur Laboringenieur, keine weitere Lehrperson
+      </div>
       <div
         v-for="(conflict, index) in event.conflicts"
         :key="index"
@@ -64,7 +68,7 @@
   import { useColor } from "@/composables/useColor";
   import { BPopover } from "bootstrap-vue-next";
   import ColorBox from "./ColorBox.vue";
-  import { School, User, Users } from "lucide-vue-next";
+  import { FlaskConical, School, User, Users } from "lucide-vue-next";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
   import type { ResourceConflict } from "@/models/ResourceConflict";
   import { useViewStore } from "@/stores/viewStore";
@@ -95,7 +99,9 @@
 
   const course = computed(() => courseStore.courseMap.get(props.event.courseId));
 
-  const hasConflict = computed(() => props.event.conflicts.length > 0);
+  const hasConflict = computed(
+    () => props.event.conflicts.length > 0 || props.event.labEngineerOnly
+  );
 
   const details = computed(() => {
     if (!course.value) return [];

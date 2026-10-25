@@ -21,6 +21,14 @@ export type IgnoredResourceConflict = {
   resourceId: number;
 };
 
+/** Veranstaltung, der nur Laboringenieure zugewiesen sind */
+export type CourseLecturerViolation = {
+  courseId: number;
+  number: string;
+  name: string;
+  labEngineerCount: number;
+};
+
 export type ResourceConflictDisplay = {
   id: string;
   courseA: string;

@@ -55,8 +55,34 @@
       </b-button-group>
     </div>
 
-    <div class="no-conflict-message" v-if="conflictDisplay.length === 0">
+    <div
+      class="no-conflict-message"
+      v-if="conflictDisplay.length === 0 && labEngineerOnlyDisplay.length === 0"
+    >
       Keine Konflikte vorhanden
+    </div>
+
+    <div
+      v-for="violation in labEngineerOnlyDisplay"
+      :key="`lab-engineer-only-${violation.courseId}`"
+      class="mt-2 mb-1 p-3 border rounded d-flex justify-content-between align-items-center"
+    >
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <calendar :size="20" />
+          {{ violation.course }}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <flask-conical :size="20" />
+          {{ violation.message }}
+        </div>
+      </div>
+
+      <calendar-search-button
+        :size="32"
+        :ignored="false"
+        @click="openLabEngineerView(violation.courseId)"
+      />
     </div>
 
     <div
@@ -112,11 +138,12 @@
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
   import { BModal, BFormCheckbox, BButtonGroup, BButton } from "bootstrap-vue-next";
-  import { computed, ref, type ComputedRef } from "vue";
+  import { computed, nextTick, ref, type ComputedRef } from "vue";
   import SearchBar from "./SearchBar.vue";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
-  import { Calendar, Clock, School, User, Users } from "lucide-vue-next";
+  import { Calendar, Clock, FlaskConical, School, User, Users } from "lucide-vue-next";
   import { useViewStore } from "@/stores/viewStore";
+  import { LecturerKind } from "@/enums/enums";
 
   const conflictStore = useResourceConflictStore();
   const timeSlotStore = useTimeSlotStore();
@@ -152,6 +179,31 @@
       query.value.length === 0 ? conflicts : conflicts.filter(c => matchesQuery(c));
 
     return displayedConflicts;
+  });
+
+  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind (Lehrperson, nicht ignorierbar)
+  const labEngineerOnlyDisplay = computed(() => {
+    if (selectedResourceType.value !== "" && selectedResourceType.value !== "lecturer") return [];
+    if (selectedStatus.value === "ignored") return [];
+    return conflictStore.courseLecturerViolations
+      .map(v => {
+        const course = courseStore.courseMap.get(v.courseId);
+        return {
+          courseId: v.courseId,
+          course: `${v.number}_${course?.abbreviation ?? v.name}`,
+          name: v.name,
+          message:
+            v.labEngineerCount === 1
+              ? "Nur ein Laboringenieur, keine weitere Lehrperson"
+              : `Nur ${v.labEngineerCount} Laboringenieure, keine weitere Lehrperson`,
+        };
+      })
+      .filter(
+        v =>
+          query.value.length === 0 ||
+          v.course.toLowerCase().includes(query.value) ||
+          v.name.toLowerCase().includes(query.value)
+      );
   });
 
   function matchesQuery(conflict: ResourceConflictDisplay) {
@@ -229,6 +281,22 @@
   function openConflictView(conflict: ResourceConflictDisplay) {
     viewStore.openConflict(conflict.resourceType, conflict.resourceId);
     show.value = false;
+  }
+
+  /**
+   * Öffnet die Ansicht des (ersten) Laboringenieurs einer Veranstaltung und lässt deren Termine aufleuchten.
+   *
+   * @param courseId - ID der Veranstaltung
+   */
+  async function openLabEngineerView(courseId: number) {
+    const course = courseStore.courseMap.get(courseId);
+    const labEngineer = course?.lecturers.find(l => l.kind === LecturerKind.LAB_ENGINEER);
+    if (!course || !labEngineer) return;
+    show.value = false;
+    await viewStore.openConflict("lecturer", labEngineer.id);
+    // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
+    await nextTick();
+    if (course.timeSlots.length > 0) courseStore.highlightCourse(courseId);
   }
 </script>
 

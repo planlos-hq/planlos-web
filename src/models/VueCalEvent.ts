@@ -15,4 +15,6 @@ export type VueCalEvent = {
   // Ursprüngliche Studiengruppe/Spalte des Events, wird von vue-cal nicht angefasst
   studyGroupId?: number;
   conflicts: ResourceConflict[];
+  // Der Veranstaltung sind nur Laboringenieure zugewiesen (nicht ignoriert)
+  labEngineerOnly: boolean;
 };

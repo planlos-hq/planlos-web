@@ -19,7 +19,9 @@
       <conflict-warning-button
         @click="showConflicts = true"
         :size="28"
-        :conflict-count="conflictStore.resourceConflictsList.length"
+        :conflict-count="
+          conflictStore.resourceConflictsList.length + conflictStore.courseLecturerViolations.length
+        "
         title="Konflikte anzeigen"
       />
       <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />

@@ -98,6 +98,13 @@ export type ResourceConflictApiData = {
   slot_b_duration: string;
 };
 
+export type CourseLecturerViolationApiData = {
+  course_id: number;
+  number: string;
+  name: string;
+  lab_engineer_count: number;
+};
+
 export type IgnoredResourceConflictApiData = {
   slot_a: number;
   slot_b: number;

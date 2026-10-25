@@ -138,10 +138,12 @@
       handleUpdate(JSON.parse(event.data));
       await resourceConflictStore.loadResourceConflicts();
       await resourceConflictStore.loadIgnoredResourceConflicts();
+      await resourceConflictStore.loadCourseLecturerViolations();
     };
     // lädt alle Constraint Verletzungen in den Store
     await resourceConflictStore.loadResourceConflicts();
     await resourceConflictStore.loadIgnoredResourceConflicts();
+    await resourceConflictStore.loadCourseLecturerViolations();
   });
 
   onUnmounted(() => {

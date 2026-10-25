@@ -226,6 +226,7 @@
         const conflictStore = useResourceConflictStore();
         await conflictStore.loadResourceConflicts();
         await conflictStore.loadIgnoredResourceConflicts();
+        await conflictStore.loadCourseLecturerViolations();
       } else if (response.status === 400 || response.status === 422) {
         const data: { message?: unknown } | null = await response.json().catch(() => null);
         const serverMessage = typeof data?.message === "string" ? data.message : "";

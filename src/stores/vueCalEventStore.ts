@@ -53,6 +53,7 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
       schedule: studyGroupId,
       studyGroupId,
       conflicts: conflictsStore.timeSlotConflictsMap.get(timeSlot.id) ?? noConflicts,
+      labEngineerOnly: conflictsStore.labEngineerOnlyCourseIds.has(course.id),
     };
   }
 

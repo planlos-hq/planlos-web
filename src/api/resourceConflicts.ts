@@ -1,5 +1,9 @@
 import { useNotification } from "@/composables/useNotification";
-import type { IgnoredResourceConflictApiData, ResourceConflictApiData } from "./types";
+import type {
+  CourseLecturerViolationApiData,
+  IgnoredResourceConflictApiData,
+  ResourceConflictApiData,
+} from "./types";
 import type { ResourceType } from "@/models/ResourceConflict";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -179,6 +183,29 @@ export async function unignoreResourceConflictApi(ignoredConflict: IgnoredResour
     await handleApiErrors(response);
     return;
   }
+}
+
+/**
+ * Lädt alle Veranstaltungen, denen nur Laboringenieure zugewiesen sind.
+ *
+ * @returns alle betroffenen Veranstaltungen
+ */
+export async function getCourseLecturerViolationsApi() {
+  const response = await fetch(`${API_BASE_URL}/course-lecturer-violations`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return;
+  }
+
+  const violations: CourseLecturerViolationApiData[] = await response.json();
+  return violations;
 }
 
 /**

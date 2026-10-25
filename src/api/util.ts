@@ -1,6 +1,7 @@
 import { SemesterSeason } from "@/enums/enums";
 import type {
   CourseApiData,
+  CourseLecturerViolationApiData,
   DegreeProgramApiData,
   IgnoredResourceConflictApiData,
   LecturerApiData,
@@ -19,7 +20,11 @@ import type { TimeSlot } from "@/models/TimeSlot";
 import { timetableConfig } from "@/timetableConfig";
 import type { Color } from "@/models/Color";
 import type { Room } from "@/models/Room";
-import type { ResourceConflict, IgnoredResourceConflict } from "@/models/ResourceConflict";
+import type {
+  ResourceConflict,
+  IgnoredResourceConflict,
+  CourseLecturerViolation,
+} from "@/models/ResourceConflict";
 import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate";
 
 export function mapApiSeason(season: "winter" | "summer"): SemesterSeason {
@@ -368,6 +373,17 @@ export function mapApiIgnoredResourceConflict(
     resourceId: apiIgnoredConflict.resource_id,
   };
   return ingoredConflict;
+}
+
+export function mapApiCourseLecturerViolation(
+  apiViolation: CourseLecturerViolationApiData
+): CourseLecturerViolation {
+  return {
+    courseId: apiViolation.course_id,
+    number: apiViolation.number,
+    name: apiViolation.name,
+    labEngineerCount: apiViolation.lab_engineer_count,
+  };
 }
 
 export function mapIgnoredResourceConflictToApi(

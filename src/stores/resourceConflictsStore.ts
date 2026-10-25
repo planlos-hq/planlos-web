@@ -1,5 +1,6 @@
 import {
   getAllResourceConflictsApi,
+  getCourseLecturerViolationsApi,
   getConflictsForResourceApi,
   getIgnoredResourceConflictsApi,
   ignoreResourceConflictApi,
@@ -9,11 +10,13 @@ import type {
   ResourceConflict,
   IgnoredResourceConflict,
   ResourceType,
+  CourseLecturerViolation,
 } from "@/models/ResourceConflict";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useNotification } from "@/composables/useNotification";
 import {
+  mapApiCourseLecturerViolation,
   mapApiIgnoredResourceConflict,
   mapApiResourceConflict,
   mapIgnoredResourceConflictToApi,
@@ -38,6 +41,12 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   );
   const ignoredResourceConflictsList = computed(() =>
     Array.from(ignoredResourceConflictsMap.value.values())
+  );
+
+  // Veranstaltungen, denen nur Laboringenieure zugewiesen sind
+  const courseLecturerViolations = ref<CourseLecturerViolation[]>([]);
+  const labEngineerOnlyCourseIds = computed(
+    () => new Set(courseLecturerViolations.value.map(v => v.courseId))
   );
 
   const timeSlotConflictsMap = computed(() => {
@@ -131,6 +140,18 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
         resourceConflictsMap.value.delete(key);
       }
     }
+  }
+
+  /**
+   * Lädt alle Veranstaltungen, denen nur Laboringenieure zugewiesen sind, in den Store
+   */
+  async function loadCourseLecturerViolations() {
+    const apiViolations = await getCourseLecturerViolationsApi();
+    if (apiViolations === undefined) {
+      showError("Fehler", "Veranstaltungen nur mit Laboringenieur konnten nicht geladen werden");
+      return;
+    }
+    courseLecturerViolations.value = apiViolations.map(v => mapApiCourseLecturerViolation(v));
   }
 
   /**
@@ -381,9 +402,12 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     resourceConflictsList,
     ignoredResourceConflictsList,
     timeSlotConflictsMap,
+    courseLecturerViolations,
+    labEngineerOnlyCourseIds,
     getKey,
     loadResourceConflicts,
     loadIgnoredResourceConflicts,
+    loadCourseLecturerViolations,
     ignoreConflict,
     unignoreConflict,
     addResourceConflictToMap,
