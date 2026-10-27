@@ -7,6 +7,18 @@
   --button-color: #0f2d69;
 }
 
+/* Oberfläche nicht markierbar, nur Eingaben und Daten (Klasse selectable) */
+body {
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable],
+.selectable {
+  user-select: text;
+}
+
 .break-slots {
   background-color: rgba(255, 0, 0, 0.2);
 }

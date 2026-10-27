@@ -1,5 +1,5 @@
 <template>
-  <div class="info-section">
+  <div class="info-section selectable">
     <p v-if="section.text" class="info-text">{{ section.text }}</p>
     <p v-if="section.link">
       <a :href="section.link" target="_blank" rel="noopener noreferrer">{{ section.link }}</a>

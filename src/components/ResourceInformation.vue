@@ -9,12 +9,12 @@
       class="d-flex flex-column justify-content-between rounded-3 mb-1"
     >
       <p class="p-0 m-0 key">{{ field[0] }}:</p>
-      <div class="p-0 m-0 value" v-if="Array.isArray(field[1])">
+      <div class="p-0 m-0 value selectable" v-if="Array.isArray(field[1])">
         <p v-for="item in field[1]" :key="item.toString()" class="p-0 m-0">
           {{ item }}
         </p>
       </div>
-      <p class="p-0 m-0 value" v-if="!Array.isArray(field[1])">
+      <p class="p-0 m-0 value selectable" v-if="!Array.isArray(field[1])">
         {{ field[1] ? field[1] : "----" }}
       </p>
     </div>
