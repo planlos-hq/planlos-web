@@ -5,7 +5,7 @@
     @ok="validate"
     ok-title="Hinzufügen"
     ok-variant="primary"
-    cancel-title="Abbrechen"
+    ok-only
     lazy
     no-animation
   >

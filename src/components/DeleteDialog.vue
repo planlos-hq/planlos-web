@@ -4,9 +4,9 @@
     centered
     ok-title="Löschen"
     ok-variant="danger"
-    cancel-title="Abbrechen"
     :ok-disabled="confirmText !== 'Bestätigen'"
     @ok="confirm"
+    ok-only
     lazy
     unmount-lazy
     no-animation

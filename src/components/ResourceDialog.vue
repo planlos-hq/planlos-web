@@ -4,8 +4,8 @@
     size="md"
     ref="modal"
     scrollable
-    @cancel="cancel"
     @show="onShown"
+    ok-only
     lazy
     unmount-lazy
     no-animation
@@ -80,8 +80,6 @@
       centered
       ok-title="Trotzdem erstellen"
       ok-variant="primary"
-      cancel-title="Abbrechen"
-      cancel-variant="danger"
       @ok="confirmCreateAnyway"
       no-animation
     >
@@ -104,12 +102,6 @@
       <p class="mb-0">Möchten Sie den Kurs trotzdem erstellen?</p>
     </b-modal>
 
-    <template #footer="{ cancel }">
-      <b-button @click="cancel()" variant="danger">Abbrechen</b-button>
-      <b-button @click="triggerSubmit" variant="primary" v-if="selectedTab">
-        {{ mode === "create" ? "Speichern" : "Änderungen übernehmen" }}
-      </b-button>
-    </template>
     <template-pop-up v-model="showTemplatePopUp" @on-close="closeTemplatePopUp" />
   </b-modal>
 </template>

@@ -5,6 +5,7 @@
     size="md"
     scrollable
     no-animation
+    ok-only
     @hide="emit('update:modelValue', false)"
     @show="onShown"
   >
@@ -114,8 +115,7 @@
       </b-alert>
     </div>
 
-    <template #footer="{ cancel }">
-      <b-button @click="cancel()" variant="secondary">Schließen</b-button>
+    <template #footer>
       <b-button
         v-if="activeMode === 'import'"
         variant="primary"

@@ -4,7 +4,7 @@
     centered
     @ok="validate"
     ok-title="Bestätigen"
-    cancel-title="Abbrechen"
+    ok-only
     lazy
     unmount-lazy
     no-animation

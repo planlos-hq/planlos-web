@@ -23,8 +23,6 @@
             CSV / Excel Import / Export
           </b-button>
         </div>
-
-        <b-button variant="primary" class="mt-auto" @click="close">Schließen</b-button>
       </div>
 
       <div class="settings-col">
