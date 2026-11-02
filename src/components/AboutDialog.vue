@@ -1,7 +1,7 @@
 <template>
   <base-info-button label="About" title="Über uns" :offset="95" ref="baseBtn">
     <template #label>
-      <span @click.stop="openAbout">About</span>
+      <span @click.stop="openAbout">Über uns</span>
     </template>
     <div class="about-content text-center">
       <img src="/logo/PlanLos_logo_schrift.png" alt="PlanLos Logo" class="logo-schrift mb-4" />

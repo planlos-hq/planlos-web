@@ -102,6 +102,12 @@
       <p class="mb-0">Möchten Sie den Kurs trotzdem erstellen?</p>
     </b-modal>
 
+    <template #footer>
+      <b-button @click="triggerSubmit" variant="primary" v-if="selectedTab">
+        {{ mode === "create" ? "Speichern" : "Änderungen übernehmen" }}
+      </b-button>
+    </template>
+
     <template-pop-up v-model="showTemplatePopUp" @on-close="closeTemplatePopUp" />
   </b-modal>
 </template>
