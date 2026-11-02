@@ -234,7 +234,7 @@
           key: "kind",
           placeholder: "Typ",
           type: "select",
-          required: false,
+          required: true,
           options: computed(() =>
             Object.values(LecturerKind).map(value => ({
               value: value,
