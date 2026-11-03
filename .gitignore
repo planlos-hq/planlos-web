@@ -20,3 +20,5 @@ result
 .idea
 *.swp
 .DS_Store
+
+settings.yml
