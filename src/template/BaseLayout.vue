@@ -11,9 +11,7 @@
 
 <style scoped>
   .base-layout {
-    display: grid;
-    grid-template-columns: 1fr 5fr;
-    grid-template-rows: 1fr;
+    display: flex;
     height: 100vh;
     overflow: hidden;
     width: 100vw;
@@ -21,18 +19,18 @@
 
   .side-bar {
     display: flex;
+    flex: 1 1 0;
     flex-direction: column;
-    grid-column: 1;
-    grid-row: 1;
     height: 100%;
+    max-width: 500px;
+    min-width: 200px;
     overflow: hidden;
   }
 
   .content {
-    grid-column: 2;
-    grid-row: 1;
+    flex: 5 1 0;
     height: 100%;
-    min-height: 0;
+    min-width: 0;
     overflow: hidden;
   }
 </style>

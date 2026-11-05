@@ -11,40 +11,43 @@
   <import-export-dialog v-model="showImportExportDialog" />
 
   <div class="sidebar-container">
-    <div
-      class="d-flex flex-row flex-wrap justify-content-center justify-content-evenly mt-3 mb-3 top-actions"
-    >
-      <add-button @click="showCreateDialog = true" :size="28" title="Hinzufügen" />
-      <settings-button @click="showSettings = !showSettings" :size="28" title="Einstellungen" />
-      <conflict-warning-button
-        @click="showConflicts = true"
-        :size="28"
-        :conflict-count="
-          conflictStore.resourceConflictsList.length + conflictStore.courseLecturerViolations.length
-        "
-        title="Konflikte anzeigen"
-      />
-      <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />
-      <undo-button
-        :size="28"
-        :class="{ disabled: !undoStore.undoLabel }"
-        :title="
-          undoStore.undoLabel
-            ? `Rückgängig: ${undoStore.undoLabel} (Strg+Z)`
-            : 'Nichts rückgängig zu machen'
-        "
-        @click="undoStore.undo()"
-      />
-      <redo-button
-        :size="28"
-        :class="{ disabled: !undoStore.redoLabel }"
-        :title="
-          undoStore.redoLabel
-            ? `Wiederholen: ${undoStore.redoLabel} (Strg+Umschalt+Z)`
-            : 'Nichts zu wiederholen'
-        "
-        @click="undoStore.redo()"
-      />
+    <div class="top-actions mt-3 mb-3">
+      <div class="action-group primary-actions">
+        <add-button @click="showCreateDialog = true" :size="28" title="Hinzufügen" />
+        <settings-button @click="showSettings = !showSettings" :size="28" title="Einstellungen" />
+        <conflict-warning-button
+          @click="showConflicts = true"
+          :size="28"
+          :conflict-count="
+            conflictStore.resourceConflictsList.length +
+            conflictStore.courseLecturerViolations.length
+          "
+          title="Konflikte anzeigen"
+        />
+        <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />
+      </div>
+      <div class="action-group">
+        <undo-button
+          :size="28"
+          :class="{ disabled: !undoStore.undoLabel }"
+          :title="
+            undoStore.undoLabel
+              ? `Rückgängig: ${undoStore.undoLabel} (Strg+Z)`
+              : 'Nichts rückgängig zu machen'
+          "
+          @click="undoStore.undo()"
+        />
+        <redo-button
+          :size="28"
+          :class="{ disabled: !undoStore.redoLabel }"
+          :title="
+            undoStore.redoLabel
+              ? `Wiederholen: ${undoStore.redoLabel} (Strg+Umschalt+Z)`
+              : 'Nichts zu wiederholen'
+          "
+          @click="undoStore.redo()"
+        />
+      </div>
     </div>
 
     <div class="temp-container" v-if="view.temp">
@@ -624,7 +627,19 @@
     background-color: var(--bs-secondary-border-subtle, #565e64);
   }
 
-  .top-actions > * {
+  .top-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 3rem;
+    justify-content: center;
+  }
+
+  .action-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .action-group > * {
     align-items: center;
     border-radius: 10px;
     display: flex;
@@ -671,12 +686,12 @@
     cursor: pointer;
   }
 
-  .top-actions > *:not(:first-child):hover {
+  .primary-actions > .button-wrapper:hover {
     background-color: var(--hover-color);
     cursor: pointer;
   }
 
-  .top-actions > .disabled:not(:first-child) {
+  .action-group > .disabled {
     background-color: transparent;
     cursor: default;
     opacity: 0.35;
