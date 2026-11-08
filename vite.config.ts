@@ -29,6 +29,26 @@ export default defineConfig(({ mode }) => {
       },
     },
     base: process.env.URL_BASE,
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const vendors: Record<string, string[]> = {
+              vue: ["/vue/", "/@vue/", "/pinia/", "/vue-router/"],
+              bootstrap: ["/bootstrap/", "/bootstrap-vue-next/", "/@floating-ui/"],
+              "vue-cal": ["/vue-cal/"],
+              icons: ["/lucide-vue-next/"],
+            };
+            if (!id.includes("/node_modules/")) {
+              return undefined;
+            }
+            return Object.keys(vendors).find(name =>
+              vendors[name]?.some(dir => id.includes(`/node_modules${dir}`))
+            );
+          },
+        },
+      },
+    },
     test: {
       includeSource: ["src/**/*.{js,ts}"],
       coverage: {

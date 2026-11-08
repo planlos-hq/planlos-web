@@ -1,6 +1,4 @@
 import { computed, ref } from "vue";
-import html2canvas from "html2canvas-pro";
-import jsPDF from "jspdf";
 import { useViewStore } from "@/stores/viewStore";
 import { Tab } from "@/enums/enums";
 
@@ -34,6 +32,11 @@ export function usePdfExport() {
     exportError.value = null;
 
     try {
+      // Erst beim Export laden: die Bibliotheken sind groß und werden selten gebraucht
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+      ]);
       const scale = 2;
       const scrollableEl = calendarEl.querySelector(".vuecal__scrollable") as HTMLElement | null;
       const fullScrollHeight = scrollableEl?.scrollHeight ?? calendarEl.scrollHeight;
