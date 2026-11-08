@@ -45,6 +45,8 @@
   const props = defineProps<{
     items: T[];
     searchableText?: (item: T) => string;
+    /** Own search: replaces the default matching when given */
+    matches?: (item: T, query: string) => boolean;
     isItemSelected?: (item: T) => boolean;
     draggable: boolean;
     maxSearchDepth?: number;
@@ -132,6 +134,9 @@
     const filtered = props.items.filter(item => {
       if (query.value.length === 0) {
         return true;
+      }
+      if (props.matches !== undefined) {
+        return props.matches(item, query.value);
       }
       if (props.searchableText !== undefined && props.searchableText(item) !== "") {
         if (props.searchableText(item).toLowerCase().includes(query.value)) return true;

@@ -1,14 +1,9 @@
 <template>
-  <time-table-settings
-    v-model="showSettings"
-    @close="showSettings = !showSettings"
-    @open-import-export="showImportExportDialog = true"
-  />
+  <settings-page v-model="showSettings" v-model:section="settingsSection" />
   <resource-dialog v-model="showCreateDialog" mode="create" :selected-tab="view.tab" />
   <resource-dialog v-model="showEditDialog" mode="edit" :selected-tab="view.tab" />
   <conflicts-pop-up v-model="showConflicts" />
   <share-settings-dialog v-model="showShareDialog" />
-  <import-export-dialog v-model="showImportExportDialog" />
 
   <div class="sidebar-container">
     <div class="top-actions mt-3 mb-3">
@@ -87,6 +82,8 @@
         :class="{ selected: view.tab === Tab.COURSE }"
         :title="'Veranstaltungen'"
       />
+      <!-- Die Planung steht für sich, getrennt von den Ressourcen-Tabs -->
+      <span class="tab-divider" aria-hidden="true" />
       <lecturer-button
         @click="selectTab(Tab.LECTURER)"
         :size="20"
@@ -217,7 +214,7 @@
   import { useCourseStore } from "@/stores/courseStore";
   import { computed, ref } from "vue";
   import ListWithSearch from "@/components/ListWithSearch.vue";
-  import TimeTableSettings from "./TimeTableSettings.vue";
+  import SettingsPage from "./SettingsPage.vue";
   import SettingsButton from "./IconButtons/SettingsButton.vue";
   import AddButton from "./IconButtons/AddButton.vue";
   import { BButton } from "bootstrap-vue-next";
@@ -268,7 +265,6 @@
   } from "lucide-vue-next";
   import { useViewStore } from "@/stores/viewStore";
   import type { SortOption } from "@/models/SortOptions";
-  import ImportExportDialog from "./ImportExportDialog.vue";
   import ToggleAllButton from "./IconButtons/ToggleAllButton.vue";
 
   export type ListItem = Course | Lecturer | Room | DegreeProgram | StudyGroup;
@@ -472,7 +468,8 @@
   const showEditDialog = ref(false);
   const showConflicts = ref(false);
   const showShareDialog = ref(false);
-  const showImportExportDialog = ref(false);
+  /** Offener Bereich der Einstellungen, Ansicht zuerst */
+  const settingsSection = ref("view");
 
   const emit = defineEmits<{
     close: [void];
@@ -673,6 +670,14 @@
     padding: 0;
     transition: all 0.2s ease;
     width: 34px;
+  }
+
+  .panel > .tab-divider {
+    align-self: center;
+    background: var(--border-color);
+    height: 20px;
+    pointer-events: none;
+    width: 1px;
   }
 
   .panel .selected {

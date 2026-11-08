@@ -24,6 +24,8 @@ textarea,
 }
 
 .btn-primary {
+  --bs-btn-disabled-bg: var(--button-color);
+  --bs-btn-disabled-border-color: var(--button-color);
   background-color: var(--button-color);
   border-color: var(--button-color);
 }
