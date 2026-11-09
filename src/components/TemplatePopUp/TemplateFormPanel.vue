@@ -20,8 +20,9 @@
     <div class="picker">
       <div class="picker-column">
         <list-with-search
-          :items="availableCourses"
+          :items="courseStore.courseList"
           :matches="matchesSearch"
+          :is-item-selected="isCourseSelected"
           :draggable="false"
           :max-height="260"
           :sort-options="sortOptions"
@@ -52,35 +53,37 @@
         </div>
 
         <div
-          class="picker-box tag-list"
-          :class="{ 'tag-list-empty': selectedCourses.length === 0 }"
+          class="selected-list"
+          :class="{
+            'd-flex align-items-center justify-content-center': selectedCourses.length === 0,
+          }"
         >
           <p v-if="selectedCourses.length === 0" class="m-0 text-body-secondary">
             Noch nichts ausgewählt.
           </p>
-          <span
-            v-for="entry in selectedCourses"
-            :key="entry.id"
-            class="tag"
-            :class="{ 'tag-missing': entry.isMissing }"
-            :title="entry.label"
-          >
-            <span class="tag-label">{{ entry.label }}</span>
-            <icon-button
-              class="tag-remove"
-              :class="{ locked: disabled }"
-              :size="22"
-              role="button"
-              :tabindex="disabled ? -1 : 0"
-              :aria-label="`${entry.label} entfernen`"
-              :aria-disabled="disabled"
-              @click="toggleCourse(entry.id)"
-              @keydown.enter.prevent="toggleCourse(entry.id)"
-              @keydown.space.prevent="toggleCourse(entry.id)"
+          <b-list-group v-else class="d-flex flex-column gap-1">
+            <b-list-group-item
+              v-for="entry in selectedCourses"
+              :key="entry.id"
+              class="d-flex justify-content-between align-items-center rounded-3"
+              :class="{ 'text-danger': entry.isMissing }"
+              :title="entry.label"
             >
-              <x :size="14" />
-            </icon-button>
-          </span>
+              <span class="text-truncate">{{ entry.label }}</span>
+              <delete-button
+                class="p-1"
+                :class="{ locked: disabled }"
+                :size="24"
+                role="button"
+                :tabindex="disabled ? -1 : 0"
+                :aria-label="`${entry.label} entfernen`"
+                :aria-disabled="disabled"
+                @click="toggleCourse(entry.id)"
+                @keydown.enter.prevent="toggleCourse(entry.id)"
+                @keydown.space.prevent="toggleCourse(entry.id)"
+              />
+            </b-list-group-item>
+          </b-list-group>
         </div>
       </div>
     </div>
@@ -102,17 +105,23 @@
 
 <script setup lang="ts">
   import { computed, useTemplateRef } from "vue";
-  import { BButton, BForm, BFormFloatingLabel, BFormInput } from "bootstrap-vue-next";
-  import { X } from "lucide-vue-next";
-  import IconButton from "@/template/IconButton.vue";
-  import ResetButton from "./IconButtons/ResetButton.vue";
-  import ListWithSearch from "./ListWithSearch.vue";
+  import {
+    BButton,
+    BForm,
+    BFormFloatingLabel,
+    BFormInput,
+    BListGroup,
+    BListGroupItem,
+  } from "bootstrap-vue-next";
+  import DeleteButton from "../IconButtons/DeleteButton.vue";
+  import ResetButton from "../IconButtons/ResetButton.vue";
+  import ListWithSearch from "../ListWithSearch.vue";
   import { useCourseStore } from "@/stores/courseStore";
   import type { Course } from "@/models/Course";
   import type { SortOption } from "@/models/SortOptions";
   import type { TemplateId } from "@/composables/useTemplateOverlay";
 
-  /** Ein Tag in der rechten Liste */
+  /** Ein Eintrag in der rechten Liste */
   type SelectedCourseEntry = {
     id: TemplateId;
     label: string;
@@ -167,11 +176,16 @@
     { label: "Abkürzung", comparator: (a, b) => a.abbreviation.localeCompare(b.abbreviation) },
   ];
 
-  /** Linke Liste: alle Veranstaltungen, die noch nicht ausgewählt sind */
-  const availableCourses = computed(() => {
-    const selectedIds = new Set(props.courseIds);
-    return courseStore.courseList.filter(course => !selectedIds.has(course.id));
-  });
+  /**
+   * Ausgewählte Veranstaltungen bleiben in der linken Liste, werden dort aber hervorgehoben.
+   * Ein Klick darauf wählt sie wieder ab.
+   *
+   * @param course - die Veranstaltung
+   * @returns true, wenn die Veranstaltung ausgewählt ist
+   */
+  function isCourseSelected(course: Course): boolean {
+    return props.courseIds.includes(course.id);
+  }
 
   /**
    * Suche der linken Liste: der Suchtext muss im Anzeigenamen vorkommen.
@@ -192,7 +206,9 @@
       return {
         id,
         label:
-          course !== undefined ? courseLabel(course) : `Veranstaltung ${id} – nicht mehr vorhanden`,
+          course !== undefined
+            ? `${course.number} ${course.name}`
+            : `Veranstaltung ${id} – nicht mehr vorhanden`,
         isMissing: course === undefined,
       };
     })
@@ -268,26 +284,14 @@
     min-width: 0;
   }
 
-  .picker-box {
+  .selected-list {
     border: 1px solid var(--border-color);
     border-radius: 0.375rem;
-    display: flex;
     flex: 1;
-    gap: 0.25rem;
+    max-height: 160px;
     min-height: 0;
     overflow-y: auto;
-  }
-
-  .tag-list {
-    align-content: flex-start;
-    flex-flow: row wrap;
-    max-height: 160px;
-    padding: 8px;
-  }
-
-  /* Leerer Text in der Mitte der Box */
-  .tag-list-empty {
-    place-content: center;
+    padding: 5px;
   }
 
   .locked {
@@ -303,33 +307,6 @@
   .selected-title {
     font-size: 0.95rem;
     margin: 0;
-  }
-
-  .tag {
-    align-items: center;
-    background-color: var(--seleted-item-color);
-    border-radius: 999px;
-    color: var(--button-color);
-    display: inline-flex;
-    font-size: 0.85rem;
-    gap: 2px;
-    max-width: 100%;
-    padding: 2px 3px 2px 9px;
-  }
-
-  .tag-missing {
-    background-color: rgb(180 35 24 / 12%);
-    color: var(--bs-danger);
-  }
-
-  .tag-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tag-remove {
-    flex: none;
   }
 
   .form-footer {
@@ -354,7 +331,7 @@
 
     /* Die Liste füllt hier die Spalte, die 260px-Grenze gilt nur auf kleinen Bildschirmen */
     .picker-column :deep(.list-wrapper),
-    .tag-list {
+    .selected-list {
       max-height: none;
     }
   }

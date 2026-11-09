@@ -69,8 +69,8 @@
   import { BFormInput, BInputGroup } from "bootstrap-vue-next";
   import { filterTemplates, type TemplateId } from "@/composables/useTemplateOverlay";
   import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate";
-  import AddButton from "./IconButtons/AddButton.vue";
-  import DeleteButton from "./IconButtons/DeleteButton.vue";
+  import AddButton from "../IconButtons/AddButton.vue";
+  import DeleteButton from "../IconButtons/DeleteButton.vue";
 
   const props = defineProps<{
     templates: StudyGroupTemplate[];

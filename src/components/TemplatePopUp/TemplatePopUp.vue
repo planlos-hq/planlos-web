@@ -87,7 +87,7 @@
   import { Plus } from "lucide-vue-next";
   import TemplateListPanel from "./TemplateListPanel.vue";
   import TemplateFormPanel from "./TemplateFormPanel.vue";
-  import DeleteDialog from "./DeleteDialog.vue";
+  import DeleteDialog from "../DeleteDialog.vue";
   import { useTemplateStore } from "@/stores/templateStore";
   import { useCourseStore } from "@/stores/courseStore";
   import {

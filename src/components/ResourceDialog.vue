@@ -145,7 +145,7 @@
   import { useTemplateStore } from "@/stores/templateStore.ts";
   import { useViewStore } from "@/stores/viewStore";
   import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate.ts";
-  import TemplatePopUp from "./TemplatePopUp.vue";
+  import TemplatePopUp from "./TemplatePopUp/TemplatePopUp.vue";
 
   type BaseResource = {
     id: number;
