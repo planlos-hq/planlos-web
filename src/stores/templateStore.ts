@@ -10,7 +10,7 @@ import {
   updateStudyGroupTemplateApi,
 } from "@/api/studyGroupTemplate";
 import type { StudyGroupTemplateApiData } from "@/api/types";
-import { mapTemplateUpdatesToApi } from "@/api/util";
+import { mapApiTemplate, mapTemplateUpdatesToApi } from "@/api/util";
 
 export const useTemplateStore = defineStore("templates", () => {
   const templateMap = ref<Map<number, StudyGroupTemplate>>(new Map<number, StudyGroupTemplate>());
@@ -23,8 +23,11 @@ export const useTemplateStore = defineStore("templates", () => {
    * Erstellt ein neues Template und fügt es der Template-Map hinzu
    *
    * @param data - Benötigt ein Template-Objekt ohne ID
+   * @returns das created Template oder undefined, wenn das Erstellen fehlgeschlagen ist
    */
-  async function createTemplate(data: Omit<StudyGroupTemplate, "id">) {
+  async function createTemplate(
+    data: Omit<StudyGroupTemplate, "id">
+  ): Promise<StudyGroupTemplate | undefined> {
     const { name, courses } = data;
 
     try {
@@ -32,7 +35,13 @@ export const useTemplateStore = defineStore("templates", () => {
         await createStudyGroupTemplateApi(name);
 
       if (template === undefined) {
-        throw Error;
+        throw new Error("Template konnte nicht erstellt werden.");
+      }
+
+      // Vorlage bereits eintragen, damit sie nicht erst über das Live-Update in der Liste auftaucht.
+      // Live-Updates überschreiben den Eintrag nicht.
+      if (!templateMap.value.has(template.id)) {
+        templateMap.value.set(template.id, mapApiTemplate(template, []));
       }
 
       for (const course of courses ?? []) {
@@ -40,9 +49,13 @@ export const useTemplateStore = defineStore("templates", () => {
       }
 
       showSuccess("Template erfolgreich erstellt!");
+
+      return templateMap.value.get(template.id);
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Erstellen eines Templates.");
+
+      return undefined;
     }
   }
 
@@ -65,8 +78,12 @@ export const useTemplateStore = defineStore("templates", () => {
    *
    * @param id - Die ID des zu aktualisierenden Templates
    * @param updates - Ein Objekt mit den zu aktualisierenden Feldern (ohne ID)
+   * @returns true, wenn das Aktualisieren erfolgreich war
    */
-  async function updateTemplate(id: number, updates: Partial<Omit<StudyGroupTemplate, "id">>) {
+  async function updateTemplate(
+    id: number,
+    updates: Partial<Omit<StudyGroupTemplate, "id">>
+  ): Promise<boolean> {
     try {
       const template = templateMap.value.get(id);
       if (!template) throw Error("Template nicht gefunden.");
@@ -76,7 +93,7 @@ export const useTemplateStore = defineStore("templates", () => {
       const apiTemplate = await updateStudyGroupTemplateApi(id, apiUpdates);
 
       if (apiTemplate === undefined) {
-        throw Error;
+        throw new Error("Template konnte nicht aktualisiert werden.");
       }
 
       if (updates.courses !== undefined) {
@@ -97,10 +114,18 @@ export const useTemplateStore = defineStore("templates", () => {
         }
       }
 
+      if (updates.name !== undefined) {
+        template.name = apiTemplate.name;
+      }
+
       showSuccess("Template erfolgreich aktualisiert!");
+
+      return true;
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Aktualisieren eines Templates.");
+
+      return false;
     }
   }
 
@@ -108,8 +133,9 @@ export const useTemplateStore = defineStore("templates", () => {
    * Löscht ein Studiengruppen-Template
    *
    * @param id - Die ID des zu löschenden Templates
+   * @returns true, wenn das Löschen erfolgreich war
    */
-  async function deleteTemplate(id: number) {
+  async function deleteTemplate(id: number): Promise<boolean> {
     try {
       const template = templateMap.value.get(id);
 
@@ -119,17 +145,26 @@ export const useTemplateStore = defineStore("templates", () => {
 
       const courses = [...template.courses];
 
-      if (courses.length !== 0) {
-        for (const c of courses) {
-          await removeCourseFromStudyGroupTemplateApi(template.id, c.id);
-        }
+      for (const c of courses) {
+        await removeCourseFromStudyGroupTemplateApi(template.id, c.id);
       }
 
       await deleteStudyGroupTemplateApi(id);
+
+      templateMap.value.delete(id);
+
+      if (selectedTemplateId.value === id) {
+        selectedTemplateId.value = null;
+      }
+
       showSuccess("Template erfolgreich gelöscht!");
+
+      return true;
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Löschen eines Templates!");
+
+      return false;
     }
   }
 

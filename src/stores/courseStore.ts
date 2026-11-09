@@ -22,6 +22,8 @@ import { Tab } from "@/enums/enums";
 import { useViewStore } from "./viewStore";
 import type { Color } from "@/models/Color";
 import { courseColorResource, useUndoStore } from "@/stores/undoStore";
+import { useTemplateStore } from "./templateStore";
+import { removeCourseFromStudyGroupTemplateApi } from "@/api/studyGroupTemplate";
 
 /**
  * Pinia Store für die Verwaltung von Kursen
@@ -38,6 +40,7 @@ export const useCourseStore = defineStore("courses", () => {
   const courseMap = ref<Map<number, Course>>(new Map<number, Course>());
   const courseList = computed(() => Array.from(courseMap.value.values()));
   const viewStore = useViewStore();
+  const templateStore = useTemplateStore();
   const highlightedCourseId = ref<number | null>(null);
   // alternativ einzelne Timeslots, z. B. die beiden eines Konflikts
   const highlightedTimeSlotIds = ref<number[]>([]);
@@ -264,6 +267,11 @@ export const useCourseStore = defineStore("courses", () => {
       }
       if (course.color) {
         await removeColorFromCourseApi(course.id, course.color.id);
+      }
+
+      const templates = templateStore.templateList.filter(t => t.courses.some(c => c.id === id));
+      for (const t of templates) {
+        await removeCourseFromStudyGroupTemplateApi(t.id, id);
       }
 
       await deleteCourseApi(id);
