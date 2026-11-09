@@ -22,7 +22,10 @@
           class="chip"
           :class="{ active: selectedWeekdays.includes(day.value) }"
           :aria-pressed="selectedWeekdays.includes(day.value)"
-          :title="day.text"
+          :aria-disabled="isLastWeekday(day.value)"
+          :title="
+            isLastWeekday(day.value) ? `${day.text}: mindestens ein Tag bleibt sichtbar` : day.text
+          "
           @click="toggleWeekday(day.value)"
         >
           {{ day.short }}
@@ -106,6 +109,7 @@
   const {
     selectedWeekdays,
     toggleWeekday,
+    isLastWeekday,
     resetWeekdays,
     showBreaks,
     semesters,
@@ -193,6 +197,11 @@
     border-color: var(--button-color);
     color: var(--button-color);
     font-weight: 600;
+  }
+
+  /* Letzter sichtbarer Tag, lässt sich nicht abwählen */
+  .chip[aria-disabled="true"] {
+    cursor: not-allowed;
   }
 
   /* The list caps its own width for the sidebar; here it should fill the space

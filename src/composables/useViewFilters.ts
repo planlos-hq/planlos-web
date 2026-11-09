@@ -82,10 +82,18 @@ export function useViewFilters() {
     },
   });
 
+  /** Der letzte sichtbare Tag bleibt an, sonst wäre der Kalender leer */
   function toggleWeekday(day: WeekDays) {
+    if (isLastWeekday(day)) {
+      return;
+    }
     selectedWeekdays.value = selectedWeekdays.value.includes(day)
       ? selectedWeekdays.value.filter(d => d !== day)
       : [...selectedWeekdays.value, day];
+  }
+
+  function isLastWeekday(day: WeekDays) {
+    return selectedWeekdays.value.length === 1 && selectedWeekdays.value[0] === day;
   }
 
   function resetWeekdays() {
@@ -168,6 +176,7 @@ export function useViewFilters() {
   return {
     selectedWeekdays,
     toggleWeekday,
+    isLastWeekday,
     resetWeekdays,
     showBreaks,
     semesters,

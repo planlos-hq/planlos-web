@@ -17,10 +17,27 @@ export type ConnectionError = {
 export function classifyConnectionError(error: unknown): ConnectionError | null {
   // fetch wirft einen TypeError, wenn der Server gar nicht erreichbar ist
   if (error instanceof TypeError) return { code: ConnectionErrorCode.ServerUnreachable };
+  // Abbruch nach Timeout (AbortSignal.timeout), wenn der Server nicht antwortet
+  if (error instanceof DOMException && ["TimeoutError", "AbortError"].includes(error.name))
+    return { code: ConnectionErrorCode.ServerUnreachable };
   if (error instanceof ApiError && error.status >= 500)
     return { code: ConnectionErrorCode.ServerError, httpStatus: error.status };
   if (error instanceof SyntaxError) return { code: ConnectionErrorCode.InvalidResponse };
   return null;
+}
+
+/**
+ * Prüft, ob eine Anfrage während der Arbeit an der Verbindung gescheitert ist:
+ * Netzwerkfehler, Timeout oder ein Gateway-Fehler (502/503/504, z. B. Server gestoppt).
+ * Ein 500 einer einzelnen Aktion zählt nicht dazu, das ist eher ein Fehler im Server.
+ *
+ * @param error - Der aufgetretene Fehler
+ * @returns true, wenn der Server nicht (mehr) erreichbar ist
+ */
+export function isConnectionLoss(error: unknown): boolean {
+  if (error instanceof ApiError) return [502, 503, 504].includes(error.status);
+  const code = classifyConnectionError(error)?.code;
+  return code === ConnectionErrorCode.ServerUnreachable;
 }
 
 /**
@@ -30,10 +47,28 @@ export function classifyConnectionError(error: unknown): ConnectionError | null 
  * - connectionError: Der aktuelle Verbindungsfehler oder null
  * - hasConnectionError: Ob ein Verbindungsfehler vorliegt
  * - reportConnectionError: Funktion zum Melden eines Fehlers
+ * - initialLoadDone: Ob der erste Datenabruf beim Start abgeschlossen ist
+ * - accessDenied: Gesetzt, wenn der Server den Zugriff verweigert hat
+ * - reportAccessDenied: Funktion zum Melden eines verweigerten Zugriffs
  */
 export const useConnectionStore = defineStore("connection", () => {
   const connectionError = ref<ConnectionError | null>(null);
   const hasConnectionError = computed(() => connectionError.value !== null);
+
+  /** Der erste Datenabruf beim Start ist abgeschlossen (erfolgreich oder nicht) */
+  const initialLoadDone = ref(false);
+
+  /** Der Server hat den Zugriff verweigert (403); username ist das gemeldete Shibboleth-Konto */
+  const accessDenied = ref<{ username: string | null } | null>(null);
+
+  /**
+   * Merkt sich, dass der Nutzer nicht für PlanLos freigeschaltet ist.
+   *
+   * @param username - Konto laut Server, falls bekannt
+   */
+  function reportAccessDenied(username: string | null) {
+    accessDenied.value = { username };
+  }
 
   /**
    * Prüft, ob der Fehler ein Verbindungsfehler ist und merkt ihn sich in diesem Fall.
@@ -49,5 +84,12 @@ export const useConnectionStore = defineStore("connection", () => {
     return true;
   }
 
-  return { connectionError, hasConnectionError, reportConnectionError };
+  return {
+    connectionError,
+    hasConnectionError,
+    reportConnectionError,
+    initialLoadDone,
+    accessDenied,
+    reportAccessDenied,
+  };
 });

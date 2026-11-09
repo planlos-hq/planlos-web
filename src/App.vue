@@ -5,8 +5,8 @@
     Es funktioniert kein OnMounted, da dies außerhalb des Gültigkeitsbereiches liegen würde.
     -->
     <toast-init />
-    <connection-error-view v-if="connectionStore.hasConnectionError" />
-    <router-view v-else />
+    <!-- Auch ohne Verbindung bleibt die Oberfläche stehen, der Hinweis liegt über dem Kalender -->
+    <router-view />
   </b-app>
 </template>
 
@@ -15,8 +15,6 @@
   import { BApp } from "bootstrap-vue-next";
   import { defineComponent } from "vue";
   import { useNotification } from "./composables/useNotification";
-  import { useConnectionStore } from "./stores/connectionStore";
-  import ConnectionErrorView from "./views/ConnectionErrorView.vue";
 
   const toastInit = defineComponent({
     setup() {
@@ -26,8 +24,6 @@
       return () => null;
     },
   });
-
-  const connectionStore = useConnectionStore();
 </script>
 
 <style>

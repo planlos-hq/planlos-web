@@ -7,6 +7,8 @@ server {
     location /api/ {
         proxy_pass ${API_UPSTREAM};
         proxy_set_header Host $host;
+        # Läuft der Server nicht, schnell mit 502/504 antworten statt erst nach 60 s
+        proxy_connect_timeout 5s;
     }
 
     # Always fetch the current settings.yml

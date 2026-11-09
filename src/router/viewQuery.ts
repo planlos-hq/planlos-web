@@ -76,6 +76,8 @@ export function parseViewQuery(query: Readonly<Record<string, unknown>>): ViewSt
   if (legacyId !== undefined && selected[tab] === undefined) selected[tab] = legacyId;
 
   const hiddenWeekdays = values(query.hiddenWeekdays);
+  // Ein Link, der alle Tage ausblendet, würde einen leeren Kalender zeigen -> wenn das passiert werden stattdessen wieder alle Tage angezeigt
+  const allHidden = allWeekdays.every(day => hiddenWeekdays.includes(day));
 
   return {
     tab,
@@ -85,7 +87,7 @@ export function parseViewQuery(query: Readonly<Record<string, unknown>>): ViewSt
         .map(toId)
         .filter((id): id is number => id !== undefined)
     ),
-    hiddenWeekdays: allWeekdays.filter(day => hiddenWeekdays.includes(day)),
+    hiddenWeekdays: allHidden ? [] : allWeekdays.filter(day => hiddenWeekdays.includes(day)),
     showBreaks: values(query.showBreaks)[0] !== "false",
     temp: values(query.temp)[0] === "true",
   };

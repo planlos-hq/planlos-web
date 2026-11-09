@@ -1,5 +1,6 @@
 import { useToast } from "bootstrap-vue-next";
 import { ApiError } from "@/api/ApiError";
+import { isConnectionLoss, useConnectionStore } from "@/stores/connectionStore";
 
 let toast: ReturnType<typeof useToast> | undefined = undefined;
 
@@ -51,6 +52,17 @@ export function useNotification() {
   };
 
   const handleError = (error: Error, title: string) => {
+    // Fehlender Zugriff steht schon im Hinweis "Kein Zugriff", kein Toast pro Anfrage
+    if (error instanceof ApiError && error.status === 403) {
+      return;
+    }
+    // Verbindung während der Arbeit verloren: Hinweis "Keine Verbindung" über dem Kalender
+    // statt eines Toasts pro fehlgeschlagener Anfrage
+    if (isConnectionLoss(error) && useConnectionStore().reportConnectionError(error)) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return;
+    }
     if (error instanceof TypeError) {
       showError(
         "Netzwerkfehler",
@@ -76,6 +88,10 @@ export function useNotification() {
       case 400:
         throw new ApiError(response.status, "400 - Eingabe unvollständig oder ungültig.");
       case 403:
+        // Zeigt auf allen Tabs den Hinweis "Kein Zugriff"
+        useConnectionStore().reportAccessDenied(
+          typeof errorData?.shib_username === "string" ? errorData.shib_username : null
+        );
         throw new ApiError(
           response.status,
           `403 - Zugriff verweigert! Nutzer ${errorData?.shib_username} ist nicht autorisiert.`

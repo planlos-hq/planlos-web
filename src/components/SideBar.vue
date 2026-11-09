@@ -1,5 +1,9 @@
 <template>
-  <settings-page v-model="showSettings" v-model:section="settingsSection" />
+  <settings-page
+    v-model="showSettings"
+    v-model:section="settingsSection"
+    v-model:focus="settingsFocus"
+  />
   <resource-dialog v-model="showCreateDialog" mode="create" :selected-tab="view.tab" />
   <resource-dialog v-model="showEditDialog" mode="edit" :selected-tab="view.tab" />
   <conflicts-pop-up v-model="showConflicts" />
@@ -215,6 +219,7 @@
   import { computed, ref } from "vue";
   import ListWithSearch from "@/components/ListWithSearch.vue";
   import SettingsPage from "./SettingsPage.vue";
+  import { useSettingsDialog } from "@/composables/useSettingsDialog";
   import SettingsButton from "./IconButtons/SettingsButton.vue";
   import AddButton from "./IconButtons/AddButton.vue";
   import { BButton } from "bootstrap-vue-next";
@@ -463,13 +468,16 @@
     return "";
   }
 
-  const showSettings = ref(false);
   const showCreateDialog = ref(false);
   const showEditDialog = ref(false);
   const showConflicts = ref(false);
   const showShareDialog = ref(false);
-  /** Offener Bereich der Einstellungen, Ansicht zuerst */
-  const settingsSection = ref("view");
+  /** Einstellungen, auch aus der Planungsansicht heraus zu öffnen */
+  const {
+    show: showSettings,
+    section: settingsSection,
+    focus: settingsFocus,
+  } = useSettingsDialog();
 
   const emit = defineEmits<{
     close: [void];

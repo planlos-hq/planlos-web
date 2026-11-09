@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { useConnectionStore } from "@/stores/connectionStore";
+import { isConnectionLoss, useConnectionStore } from "@/stores/connectionStore";
 import { ApiError } from "@/api/ApiError";
 import { ConnectionErrorCode } from "@/enums/enums";
 
@@ -16,6 +16,14 @@ describe("reportConnectionError", () => {
 
     expect(result).toBe(true);
     expect(store.hasConnectionError).toBe(true);
+    expect(store.connectionError).toEqual({ code: ConnectionErrorCode.ServerUnreachable });
+  });
+
+  it("bei Timeout wird ServerUnreachable gesetzt", () => {
+    const store = useConnectionStore();
+
+    store.reportConnectionError(new DOMException("signal timed out", "TimeoutError"));
+
     expect(store.connectionError).toEqual({ code: ConnectionErrorCode.ServerUnreachable });
   });
 
@@ -49,4 +57,25 @@ describe("reportConnectionError", () => {
       expect(store.hasConnectionError).toBe(false);
     }
   );
+});
+
+describe("isConnectionLoss", () => {
+  it.each([
+    new TypeError("Failed to fetch"),
+    new DOMException("signal timed out", "TimeoutError"),
+    new ApiError(502, "Bad Gateway"),
+    new ApiError(503, "Service Unavailable"),
+    new ApiError(504, "Gateway Timeout"),
+  ])("Verbindungsabbruch während der Arbeit (%s)", error => {
+    expect(isConnectionLoss(error)).toBe(true);
+  });
+
+  it.each([
+    new ApiError(500, "Fehler beim Server"),
+    new ApiError(404, "Not Found"),
+    new SyntaxError("Unexpected token <"),
+    new Error("Mapping fehlgeschlagen"),
+  ])("kein Verbindungsabbruch (%s)", error => {
+    expect(isConnectionLoss(error)).toBe(false);
+  });
 });

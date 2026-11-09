@@ -8,6 +8,8 @@
     no-footer
     body-class="p-0"
     @hide="emit('update:modelValue', false)"
+    @shown="onShown"
+    @hidden="isShown = false"
   >
     <div class="settings">
       <nav class="settings-nav" aria-label="Bereiche der Einstellungen">
@@ -77,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref, useTemplateRef, type Component } from "vue";
+  import { computed, nextTick, ref, useTemplateRef, watch, type Component } from "vue";
   import { BButton, BFormInput, BInputGroup, BModal } from "bootstrap-vue-next";
   import { Database, LayoutGrid, Search as SearchIcon } from "lucide-vue-next";
   import DataImport from "./DataImport.vue";
@@ -89,11 +91,14 @@
     modelValue: boolean;
     /** Offener Bereich: "view" oder "data" */
     section?: string;
+    /** Einstellung, zu der beim Öffnen gesprungen wird (id eines Sucheintrags, z. B. "groups") */
+    focus?: string | null;
   }>();
 
   const emit = defineEmits<{
     "update:modelValue": [value: boolean];
     "update:section": [value: string];
+    "update:focus": [value: null];
   }>();
 
   type Section = { id: string; title: string; description: string; icon: Component };
@@ -216,6 +221,34 @@
     }
   }
 
+  /** Springt zur gewünschten Einstellung, sobald die Einstellungen offen sind */
+  function jumpToFocus() {
+    const entry = entries.find(e => e.id === props.focus);
+    if (entry !== undefined) {
+      emit("update:focus", null);
+      void jump(entry);
+    }
+  }
+
+  /** Ob das Fenster fertig angezeigt ist; vorher gibt es die Ziele im DOM noch nicht */
+  const isShown = ref(false);
+
+  function onShown() {
+    isShown.value = true;
+    // Erst nachdem das Fenster seinen eigenen Fokus gesetzt hat, sonst landet er nicht im Feld
+    setTimeout(jumpToFocus, 0);
+  }
+
+  // Schon offen: direkt springen, sonst nach dem Öffnen (onShown)
+  watch(
+    () => props.focus,
+    () => {
+      if (isShown.value) {
+        jumpToFocus();
+      }
+    }
+  );
+
   const content = useTemplateRef<HTMLDivElement>("content");
   const openExport = ref<string | null>(null);
 
@@ -238,7 +271,10 @@
     }
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView({ block: "center", behavior: smooth ? "smooth" : "auto" });
-    el.querySelector<HTMLElement>("input, select, button")?.focus({ preventScroll: true });
+    // Ein Eingabefeld (z. B. die Suche der Semestergruppen) vor Knöpfen fokussieren
+    (
+      el.querySelector<HTMLElement>("input") ?? el.querySelector<HTMLElement>("select, button")
+    )?.focus({ preventScroll: true });
     el.classList.remove("flash");
     void el.offsetWidth; // Animation neu starten
     el.classList.add("flash");

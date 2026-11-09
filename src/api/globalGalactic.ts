@@ -26,6 +26,9 @@ import { useConnectionStore } from "@/stores/connectionStore";
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+/** Höchstens so lange auf die Daten beim Start warten */
+const initialLoadTimeoutMs = 15_000;
+
 /**
  * Lädt alle Ressourcen aus der Datenbank.
 
@@ -38,6 +41,8 @@ export async function getGlobalGalacticApi() {
       headers: {
         Accept: "application/json",
       },
+      // Hängt die Verbindung, nicht ewig warten: dann zeigt die App "Keine Verbindung zum Server"
+      signal: AbortSignal.timeout(initialLoadTimeoutMs),
     });
 
     if (!response.ok) {

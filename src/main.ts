@@ -9,6 +9,7 @@ import "./assets/main.css";
 import "./assets/vuecal-override.css";
 import { getAllApplicationData } from "./api/globalGalactic";
 import { pruneView } from "./router/pruneView";
+import { useConnectionStore } from "./stores/connectionStore";
 
 async function init() {
   const pinia = createPinia();
@@ -20,13 +21,17 @@ async function init() {
   // bevor Stores und Komponenten die Ansicht lesen
   await router.isReady();
 
+  // Sofort anzeigen, sonst bleibt die Seite weiß, bis der Server antwortet (oder das Timeout greift)
+  app.mount("#app");
+
+  const connectionStore = useConnectionStore();
   try {
     if (await getAllApplicationData()) await pruneView();
   } catch (e) {
     // eslint-disable-next-line no-console
     console.log(e);
+  } finally {
+    connectionStore.initialLoadDone = true;
   }
-
-  app.mount("#app");
 }
 init();

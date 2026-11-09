@@ -4,26 +4,37 @@
       <side-bar @on-event-drag-start="onEventDragStart" />
     </template>
     <template #content>
-      <vue-cal
-        :key="view.tab"
-        v-bind="timetableConfig"
-        :schedules="calendarSchedules"
-        :events="vueCalEventStore.calendarEvents"
-        :hide-weekdays="viewStore.hiddenWeekdays"
-        :special-hours="breaks"
-        @event-drop="onEventDrop"
-        @event-resize="isValidResize"
-        @event-resize-end="onEventResize"
-      >
-        <template #event="{ event }">
-          <planning-event
-            :event="event"
-            :filter-type="view.tab"
-            @click="handleEventClick(event)"
-            @remove-event="deleteTimeSlot(event)"
-          />
-        </template>
-      </vue-cal>
+      <div class="calendar">
+        <!-- Hinweise über dem Kalender, in dieser Rangfolge: Laden beim Start, keine Verbindung und
+             fehlende Freischaltung auf allen Tabs, fehlende Semestergruppen nur im Veranstaltungs-Tab -->
+        <loading-hint v-if="!connectionStore.initialLoadDone" />
+        <connection-error-hint v-else-if="connectionStore.hasConnectionError" />
+        <access-denied-hint
+          v-else-if="connectionStore.accessDenied"
+          :username="connectionStore.accessDenied.username"
+        />
+        <no-study-groups-hint v-else-if="noStudyGroups" />
+        <vue-cal
+          :key="view.tab"
+          v-bind="timetableConfig"
+          :schedules="calendarSchedules"
+          :events="vueCalEventStore.calendarEvents"
+          :hide-weekdays="viewStore.hiddenWeekdays"
+          :special-hours="breaks"
+          @event-drop="onEventDrop"
+          @event-resize="isValidResize"
+          @event-resize-end="onEventResize"
+        >
+          <template #event="{ event }">
+            <planning-event
+              :event="event"
+              :filter-type="view.tab"
+              @click="handleEventClick(event)"
+              @remove-event="deleteTimeSlot(event)"
+            />
+          </template>
+        </vue-cal>
+      </div>
     </template>
   </base-layout>
   <event-overview
@@ -44,7 +55,7 @@
   import { VueCal } from "vue-cal";
   import "vue-cal/style";
   import { specialHours, timetableConfig } from "@/timetableConfig";
-  import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+  import { computed, onUnmounted, ref, watch } from "vue";
   import { useStudyGroupStore } from "@/stores/studyGroupStore";
   import PlanningEvent from "@/components/PlanningEvent.vue";
   import { useVueCalEventStore } from "@/stores/vueCalEventStore";
@@ -63,12 +74,18 @@
   import AboutDialog from "@/components/AboutDialog.vue";
   import HelpDialog from "@/components/HelpDialog.vue";
   import { useUndoShortcuts } from "@/composables/useUndoShortcuts";
+  import NoStudyGroupsHint from "@/components/HintCards/NoStudyGroupsHint.vue";
+  import AccessDeniedHint from "@/components/HintCards/AccessDeniedHint.vue";
+  import ConnectionErrorHint from "@/components/HintCards/ConnectionErrorHint.vue";
+  import LoadingHint from "@/components/HintCards/LoadingHint.vue";
+  import { useConnectionStore } from "@/stores/connectionStore";
 
   const vueCalEventStore = useVueCalEventStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
   const studyGroupStore = useStudyGroupStore();
   const resourceConflictStore = useResourceConflictStore();
+  const connectionStore = useConnectionStore();
   const viewStore = useViewStore();
   const { view } = storeToRefs(viewStore);
   useUndoShortcuts();
@@ -106,6 +123,11 @@
     courseStore.setCourseColor(selectedEvent.value.courseId, color);
   }
 
+  /** Im Veranstaltungs-Tab ohne ausgewählte Semestergruppe bleibt der Kalender leer */
+  const noStudyGroups = computed(
+    () => view.value.tab === Tab.COURSE && view.value.studyGroups.length === 0
+  );
+
   const calendarSchedules = computed(() => {
     switch (view.value.tab) {
       case Tab.COURSE:
@@ -132,7 +154,13 @@
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   let eventSource: EventSource | undefined = undefined;
-  onMounted(async () => {
+
+  /** Live-Updates und Konflikte, erst nach dem ersten Datenabruf (main.ts) */
+  async function startLiveUpdates() {
+    // Ohne Server nichts nachladen, der Hinweis "Keine Verbindung" bietet einen Neustart an
+    if (connectionStore.hasConnectionError || eventSource) {
+      return;
+    }
     eventSource = new EventSource(`${API_BASE_URL}/updates`);
     eventSource.onmessage = async event => {
       handleUpdate(JSON.parse(event.data));
@@ -144,7 +172,18 @@
     await resourceConflictStore.loadResourceConflicts();
     await resourceConflictStore.loadIgnoredResourceConflicts();
     await resourceConflictStore.loadCourseLecturerViolations();
-  });
+  }
+
+  // Die App wird schon vor dem Datenabruf angezeigt, daher auf dessen Ende warten
+  watch(
+    () => connectionStore.initialLoadDone,
+    done => {
+      if (done) {
+        void startLiveUpdates();
+      }
+    },
+    { immediate: true }
+  );
 
   onUnmounted(() => {
     if (eventSource) {
@@ -292,3 +331,11 @@
     // vue-cal übernimmt dieselben Zeiten wie der Store, bei einem API-Fehler setzt der Rollback beide zurück.
   }
 </script>
+
+<style scoped>
+  /* Bezugsrahmen für den Hinweis ohne Semestergruppen */
+  .calendar {
+    height: 100%;
+    position: relative;
+  }
+</style>
