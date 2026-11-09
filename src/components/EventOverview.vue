@@ -52,45 +52,34 @@
       </b-list-group-item>
 
       <b-list-group-item>
-        <dropdown-with-search
-          button-text="Räume zuweisen"
+        <!-- Gleiche Auswahl wie "Veranstaltungen zuweisen" im Ressourcen-Dialog -->
+        <form-input
+          type="search-select"
+          placeholder="Räume zuweisen"
           :disabled="false"
-          :items="roomStore.roomList"
+          :required="false"
+          :options="roomStore.roomList"
+          :model-value="timeSlot?.rooms ?? []"
           :is-item-selected="item => timeSlotResourceForm.isItemSelected(item, timeSlot?.rooms)"
           @toggle="async id => await toggleRoom(id)"
         >
-          <template #listElement="{ item }">{{ item.number }} {{ item.name }}</template>
-        </dropdown-with-search>
-        <p
-          v-for="room in timeSlot?.rooms"
-          :key="room.id"
-          class="m-0 d-flex flex-row justify-content-between align-items-center"
-        >
-          - {{ room.number }} {{ room.name }}
-          <delete-button :size="24" @click="toggleRoom(room.id)" class="p-1" />
-        </p>
-        <p class="m-0" v-show="timeSlot?.rooms.length === 0">-----</p>
+          <template #listItem="{ item }">{{ item.number }} {{ item.name }}</template>
+        </form-input>
       </b-list-group-item>
 
       <b-list-group-item>
-        <dropdown-with-search
-          button-text="Lehrpersonen zuweisen"
+        <form-input
+          type="search-select"
+          placeholder="Lehrpersonen zuweisen"
           :disabled="false"
-          :items="lecturerStore.relevantLecturers"
+          :required="false"
+          :options="lecturerStore.relevantLecturers"
+          :model-value="course?.lecturers ?? []"
           :is-item-selected="item => courseResourceForm.isItemSelected(item, course?.lecturers)"
           @toggle="async id => await toggleLecturer(id)"
         >
-          <template #listElement="{ item }">{{ item.firstName }} {{ item.lastName }}</template>
-        </dropdown-with-search>
-        <p
-          v-for="lecturer in course?.lecturers"
-          :key="lecturer.id"
-          class="m-0 d-flex flex-row justify-content-between align-items-center"
-        >
-          - {{ lecturer.firstName }} {{ lecturer.lastName }}
-          <delete-button :size="24" @click="toggleLecturer(lecturer.id)" class="p-1" />
-        </p>
-        <p class="m-0" v-show="course?.lecturers.length === 0">-----</p>
+          <template #listItem="{ item }">{{ item.firstName }} {{ item.lastName }}</template>
+        </form-input>
       </b-list-group-item>
       <b-list-group-item class="d-flex flex-row justify-content-between">
         <p class="m-0">Credits:</p>
@@ -127,7 +116,7 @@
   import { useCourseStore } from "@/stores/courseStore";
   import type { TimeSlot } from "@/models/TimeSlot";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
-  import DropdownWithSearch from "./DropdownWithSearch.vue";
+  import FormInput from "./FormInput.vue";
   import { useRoomStore } from "@/stores/roomStore";
   import { useResourceForm } from "@/composables/useResourceForm";
   import { Pencil, Plus, CalendarCheck } from "lucide-vue-next";
@@ -137,7 +126,6 @@
   import ColorBox from "./ColorBox.vue";
   import ResetButton from "./IconButtons/ResetButton.vue";
   import { assignLecturerToCourseApi, removeLecturerFromCourseApi } from "@/api/course";
-  import DeleteButton from "./IconButtons/DeleteButton.vue";
   import { timetableConfig } from "@/timetableConfig.ts";
 
   const colorStore = useColorStore();

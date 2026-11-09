@@ -207,7 +207,8 @@
     if (isRef(props.options)) {
       return props.options.value as T[];
     }
-    return [];
+    // Im Template übergebene Listen kommen bereits ausgepackt an
+    return Array.isArray(props.options) ? props.options : [];
   });
 
   /**
