@@ -19,30 +19,19 @@
 
     <div class="picker">
       <div class="picker-column">
-        <b-form-input
-          v-model="courseSearch"
-          type="search"
-          placeholder="Veranstaltung suchen…"
-          aria-label="Veranstaltungen suchen"
-          autocomplete="off"
-        />
-
-        <div class="picker-box course-list">
-          <p v-if="visibleCourses.length === 0" class="my-3 text-center text-body-secondary">
-            {{ emptyCourseListText }}
-          </p>
-          <button
-            v-for="course in visibleCourses"
-            :key="course.id"
-            type="button"
-            class="course-row"
-            :title="courseLabel(course)"
-            :disabled="disabled"
-            @click="emit('toggle-course', course.id)"
-          >
-            <span class="course-label">{{ courseLabel(course) }}</span>
-          </button>
-        </div>
+        <list-with-search
+          :items="availableCourses"
+          :matches="matchesSearch"
+          :draggable="false"
+          :max-height="260"
+          :sort-options="sortOptions"
+          show-sort-toolbar
+          @toggle="toggleCourse"
+        >
+          <template #listElement="{ item }">
+            <span :title="courseLabel(item)">{{ courseLabel(item) }}</span>
+          </template>
+        </list-with-search>
       </div>
 
       <div class="picker-column">
@@ -62,8 +51,11 @@
           />
         </div>
 
-        <div class="picker-box tag-list">
-          <p v-if="selectedCourses.length === 0" class="my-3 text-center text-body-secondary">
+        <div
+          class="picker-box tag-list"
+          :class="{ 'tag-list-empty': selectedCourses.length === 0 }"
+        >
+          <p v-if="selectedCourses.length === 0" class="m-0 text-body-secondary">
             Noch nichts ausgewählt.
           </p>
           <span
@@ -82,9 +74,9 @@
               :tabindex="disabled ? -1 : 0"
               :aria-label="`${entry.label} entfernen`"
               :aria-disabled="disabled"
-              @click="removeCourse(entry.id)"
-              @keydown.enter.prevent="removeCourse(entry.id)"
-              @keydown.space.prevent="removeCourse(entry.id)"
+              @click="toggleCourse(entry.id)"
+              @keydown.enter.prevent="toggleCourse(entry.id)"
+              @keydown.space.prevent="toggleCourse(entry.id)"
             >
               <x :size="14" />
             </icon-button>
@@ -109,13 +101,15 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, useTemplateRef } from "vue";
+  import { computed, useTemplateRef } from "vue";
   import { BButton, BForm, BFormFloatingLabel, BFormInput } from "bootstrap-vue-next";
   import { X } from "lucide-vue-next";
   import IconButton from "@/template/IconButton.vue";
   import ResetButton from "./IconButtons/ResetButton.vue";
+  import ListWithSearch from "./ListWithSearch.vue";
   import { useCourseStore } from "@/stores/courseStore";
   import type { Course } from "@/models/Course";
+  import type { SortOption } from "@/models/SortOptions";
   import type { TemplateId } from "@/composables/useTemplateOverlay";
 
   /** Ein Tag in der rechten Liste */
@@ -154,7 +148,6 @@
   }>();
 
   const courseStore = useCourseStore();
-  const courseSearch = ref<string>("");
   const nameInput = useTemplateRef<{ $el: HTMLElement }>("nameInput");
 
   /**
@@ -167,24 +160,29 @@
     return `${course.number} - ${course.name} (${course.abbreviation})`;
   }
 
-  /** Linke Liste: alle nicht ausgewählten Veranstaltungen, die zur Suche passen */
-  const visibleCourses = computed(() => {
-    const needle = courseSearch.value.trim().toLocaleLowerCase("de");
+  /** Sortierung der linken Liste, wie in der Sidebar */
+  const sortOptions: SortOption<Course>[] = [
+    { label: "Name", comparator: (a, b) => a.name.localeCompare(b.name) },
+    { label: "Nummer", comparator: (a, b) => a.number.localeCompare(b.number) },
+    { label: "Abkürzung", comparator: (a, b) => a.abbreviation.localeCompare(b.abbreviation) },
+  ];
+
+  /** Linke Liste: alle Veranstaltungen, die noch nicht ausgewählt sind */
+  const availableCourses = computed(() => {
     const selectedIds = new Set(props.courseIds);
-
-    return courseStore.courseList.filter(
-      course =>
-        !selectedIds.has(course.id) &&
-        (needle === "" || courseLabel(course).toLocaleLowerCase("de").includes(needle))
-    );
+    return courseStore.courseList.filter(course => !selectedIds.has(course.id));
   });
 
-  /** Text, wenn die linke Liste leer ist */
-  const emptyCourseListText = computed<string>(() => {
-    if (courseSearch.value.trim() !== "") return "Keine Veranstaltung gefunden.";
-    if (courseStore.courseList.length === 0) return "Keine Veranstaltungen vorhanden.";
-    return "Alle Veranstaltungen sind ausgewählt.";
-  });
+  /**
+   * Suche der linken Liste: der Suchtext muss im Anzeigenamen vorkommen.
+   *
+   * @param course - die Veranstaltung
+   * @param query - Suchtext (von der Liste schon klein geschrieben)
+   * @returns true, wenn die Veranstaltung passt
+   */
+  function matchesSearch(course: Course, query: string): boolean {
+    return courseLabel(course).toLowerCase().includes(query);
+  }
 
   /** Rechte Liste. Gelöschte Veranstaltungen bleiben sichtbar, damit man sie entfernen kann. */
   const selectedCourses = computed<SelectedCourseEntry[]>(() =>
@@ -210,11 +208,12 @@
   }
 
   /**
-   * Entfernt eine Veranstaltung über das Kreuz am Tag.
+   * Fügt eine Veranstaltung hinzu (linke Liste) oder entfernt sie (Kreuz am Tag).
+   * Die Liste und die Icon-Buttons haben kein `disabled`, deshalb wird die Sperre hier geprüft.
    *
    * @param courseId - ID der Veranstaltung
    */
-  function removeCourse(courseId: TemplateId): void {
+  function toggleCourse(courseId: TemplateId): void {
     if (props.disabled) return;
     emit("toggle-course", courseId);
   }
@@ -279,12 +278,6 @@
     overflow-y: auto;
   }
 
-  .course-list {
-    flex-direction: column;
-    max-height: 260px;
-    padding: 4px;
-  }
-
   .tag-list {
     align-content: flex-start;
     flex-flow: row wrap;
@@ -292,33 +285,13 @@
     padding: 8px;
   }
 
+  /* Leerer Text in der Mitte der Box */
+  .tag-list-empty {
+    place-content: center;
+  }
+
   .locked {
     pointer-events: none;
-  }
-
-  .course-row {
-    align-items: center;
-    background-color: transparent;
-    border: 0;
-    border-radius: 0.25rem;
-    color: inherit;
-    display: flex;
-    padding: 7px 8px;
-    text-align: left;
-  }
-
-  .course-row:hover {
-    background-color: var(--hover-color);
-  }
-
-  .course-row:disabled {
-    background-color: transparent;
-  }
-
-  .course-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .selected-head {
@@ -379,7 +352,8 @@
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     }
 
-    .course-list,
+    /* Die Liste füllt hier die Spalte, die 260px-Grenze gilt nur auf kleinen Bildschirmen */
+    .picker-column :deep(.list-wrapper),
     .tag-list {
       max-height: none;
     }

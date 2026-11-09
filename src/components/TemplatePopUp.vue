@@ -247,8 +247,8 @@
       flex-direction: row;
     }
 
-    .overlay-column {
-      width: 50%;
+    .overlay-left {
+      width: 30%;
     }
   }
 
