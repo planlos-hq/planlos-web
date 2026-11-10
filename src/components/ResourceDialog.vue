@@ -8,7 +8,6 @@
     ok-only
     lazy
     unmount-lazy
-    no-animation
   >
     <div
       class="d-flex flex-row justify-content-center justify-content-evenly mb-4 selector-panel"

@@ -43,3 +43,13 @@ textarea,
 .btn-outline-primary:hover {
   background-color: var(--button-color);
 }
+
+/* Schnellere Modal-Animation (Bootstrap: 0.15s Fade, 0.3s Slide) */
+.modal.fade,
+.modal-backdrop.fade {
+  transition-duration: 0.05s;
+}
+
+.modal.fade .modal-dialog {
+  transition-duration: 0.1s;
+}

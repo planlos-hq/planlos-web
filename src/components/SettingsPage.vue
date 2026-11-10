@@ -4,7 +4,6 @@
     title="Einstellungen"
     size="xl"
     scrollable
-    no-animation
     no-footer
     body-class="p-0"
     @hide="emit('update:modelValue', false)"
