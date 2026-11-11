@@ -22,6 +22,8 @@ import { useNotification } from "@/composables/useNotification";
 import { useTimeSlotStore } from "@/stores/timeSlotStore";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useConnectionStore } from "@/stores/connectionStore";
+import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
+import { pruneView } from "@/router/pruneView";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -84,6 +86,7 @@ export async function getAllApplicationData(): Promise<boolean> {
     courseStore.courseMap.clear();
     timeSlotStore.timeSlotMap.clear();
     timeSlotStore.timeSlotCourseAssignmentsMap.clear();
+    templateStore.templateMap.clear();
 
     data.degree_programs.forEach(d => {
       degreeProgramStore.degreeProgramMap.set(d.id, mapApiDegreeProgram(d));
@@ -182,4 +185,17 @@ export async function getAllApplicationData(): Promise<boolean> {
     handleError(e, "Fehler beim initialen Laden der Daten!");
     return false;
   }
+}
+
+/**
+ * Lädt nach einem Import alles neu: Daten, Ansicht und Konflikte.
+ */
+export async function reloadAllData() {
+  if (await getAllApplicationData()) {
+    await pruneView();
+  }
+  const conflictStore = useResourceConflictStore();
+  await conflictStore.loadResourceConflicts();
+  await conflictStore.loadIgnoredResourceConflicts();
+  await conflictStore.loadCourseLecturerViolations();
 }

@@ -101,8 +101,8 @@
   import { BFormCheckbox } from "bootstrap-vue-next";
   import type { StudyGroup } from "@/models/StudyGroup";
   import type { SortOption } from "@/models/SortOptions";
-  import ListWithSearch from "./ListWithSearch.vue";
-  import ResetButton from "./IconButtons/ResetButton.vue";
+  import ListWithSearch from "../ListWithSearch.vue";
+  import ResetButton from "../IconButtons/ResetButton.vue";
   import { matchesStudyGroup, useViewFilters, weekdays } from "@/composables/useViewFilters";
 
   /** Anzeige-Filter in Einstellungen → Ansicht: Wochentage, Pausen und Semestergruppen */

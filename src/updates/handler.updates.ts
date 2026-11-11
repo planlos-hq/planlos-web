@@ -12,9 +12,13 @@ import { handleStudyGroup } from "./studyGroup.updates";
 import { handleStudyGroupTemplate, handleStudyGroupTemplateCourse } from "./template.updates";
 import { handleCourseTimeSlot, handleTimeSlotRoom } from "./timeslot.updates";
 import type { UpdateData } from "./types.updates";
+import { reloadAfterDumpImport } from "@/api/dump";
 
 export function handleUpdate(data: UpdateData) {
   switch (data.resource) {
+    case "database":
+      void reloadAfterDumpImport();
+      break;
     case "courseTimeSlot":
       handleCourseTimeSlot(data.operation, data.data);
       break;

@@ -1,8 +1,8 @@
 <template>
   <b-modal
-    title="Folgenden Eintrag wirklich löschen?"
+    :title="title"
     centered
-    ok-title="Löschen"
+    :ok-title="okTitle"
     ok-variant="danger"
     :ok-disabled="confirmText !== 'Bestätigen'"
     @ok="confirm"
@@ -26,7 +26,7 @@
         <strong>{{ confirmWord }}</strong>
         <copy :size="14" class="ms-1" />
       </button>
-      ein, um den Eintrag zu löschen:
+      ein, um {{ action }}:
     </p>
     <b-form-input
       v-model="confirmText"
@@ -42,6 +42,22 @@
   import { Copy } from "lucide-vue-next";
 
   const confirmWord = "Bestätigen";
+
+  withDefaults(
+    defineProps<{
+      /** Überschrift des Dialogs */
+      title?: string;
+      /** Beschriftung des Bestätigen-Knopfs */
+      okTitle?: string;
+      /** Was die Bestätigung auslöst, z. B. "den Eintrag zu löschen" */
+      action?: string;
+    }>(),
+    {
+      title: "Folgenden Eintrag wirklich löschen?",
+      okTitle: "Löschen",
+      action: "den Eintrag zu löschen",
+    }
+  );
 
   const emit = defineEmits<{
     /** Eintrag darf endgültig gelöscht werden */

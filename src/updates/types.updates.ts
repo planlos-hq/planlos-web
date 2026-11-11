@@ -90,7 +90,15 @@ export type StudyGroupTemplateCourseUpdateData = {
   data: TemplateCourseAssignment;
 };
 
+/** Die ganze Datenbank wurde ersetzt (Sicherung wiederhergestellt oder geleert) */
+export type DatabaseUpdateData = {
+  resource: "database";
+  operation: "dumpImport";
+  data: null;
+};
+
 export type UpdateData =
+  | DatabaseUpdateData
   | TimeSlotUpdateData
   | TimeSlotRoomUpdateData
   | LecturerUpdateData

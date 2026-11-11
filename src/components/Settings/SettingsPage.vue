@@ -62,6 +62,8 @@
 
         <view-panel v-if="current.id === 'view'" />
 
+        <database-backups v-else-if="current.id === 'backups'" />
+
         <template v-else>
           <section class="block" data-setting="import">
             <h3>Importieren</h3>
@@ -80,15 +82,16 @@
 <script setup lang="ts">
   import { computed, nextTick, ref, useTemplateRef, watch, type Component } from "vue";
   import { BButton, BFormInput, BInputGroup, BModal } from "bootstrap-vue-next";
-  import { Database, LayoutGrid, Search as SearchIcon } from "lucide-vue-next";
+  import { Database, DatabaseBackup, LayoutGrid, Search as SearchIcon } from "lucide-vue-next";
+  import DatabaseBackups from "./DatabaseBackups.vue";
   import DataImport from "./DataImport.vue";
   import ExportCenter from "./ExportCenter.vue";
   import ViewPanel from "./ViewPanel.vue";
 
-  /** Einstellungen mit Navigation und Suche: Ansicht sowie Daten (Import und Export) */
+  /** Einstellungen mit Navigation und Suche: Ansicht, Daten (Import und Export) und Sicherungen */
   const props = defineProps<{
     modelValue: boolean;
-    /** Offener Bereich: "view" oder "data" */
+    /** Offener Bereich: "view", "data" oder "backups" */
     section?: string;
     /** Einstellung, zu der beim Öffnen gesprungen wird (id eines Sucheintrags, z. B. "groups") */
     focus?: string | null;
@@ -114,6 +117,12 @@
       title: "Daten",
       description: "Ressourcen importieren sowie den Stundenplan und Tabellen exportieren.",
       icon: Database,
+    },
+    {
+      id: "backups",
+      title: "Sicherungen",
+      description: "Die ganze Datenbank sichern, wiederherstellen oder leeren.",
+      icon: DatabaseBackup,
     },
   ];
 
@@ -159,7 +168,13 @@
       terms: "gruppen kohorte jahrgang studiengang auswahl filter sortieren",
       target: "groups",
     },
-    { id: "data", section: "data", label: "Daten", terms: "import export", target: "" },
+    {
+      id: "data",
+      section: "data",
+      label: "Daten",
+      terms: "import export",
+      target: "",
+    },
     {
       id: "import",
       section: "data",
@@ -183,6 +198,41 @@
         "csv excel xlsx tabelle export herunterladen lehrpersonen räume studiengänge semestergruppen veranstaltungen",
       target: "export:tables",
       exportKey: "tables",
+    },
+    {
+      id: "backups",
+      section: "backups",
+      label: "Sicherungen",
+      terms: "backup datenbank dump sql",
+      target: "",
+    },
+    {
+      id: "backups-create",
+      section: "backups",
+      label: "Sicherung erstellen",
+      terms: "backup datenbank dump sql name herunterladen download",
+      target: "backups-create",
+    },
+    {
+      id: "backups-list",
+      section: "backups",
+      label: "Sicherungen auf dem Server",
+      terms: "backup liste wiederherstellen restore löschen herunterladen",
+      target: "backups-list",
+    },
+    {
+      id: "backups-file",
+      section: "backups",
+      label: "Sicherung aus Datei wiederherstellen",
+      terms: "backup zip hochladen upload datei restore import dump",
+      target: "backups-file",
+    },
+    {
+      id: "backups-clear",
+      section: "backups",
+      label: "Datenbank leeren",
+      terms: "löschen zurücksetzen truncate alles leer reset",
+      target: "backups-clear",
     },
   ];
 

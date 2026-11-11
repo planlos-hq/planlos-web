@@ -218,7 +218,7 @@
   import { useCourseStore } from "@/stores/courseStore";
   import { computed, ref } from "vue";
   import ListWithSearch from "@/components/ListWithSearch.vue";
-  import SettingsPage from "./SettingsPage.vue";
+  import SettingsPage from "./Settings/SettingsPage.vue";
   import { useSettingsDialog } from "@/composables/useSettingsDialog";
   import SettingsButton from "./IconButtons/SettingsButton.vue";
   import AddButton from "./IconButtons/AddButton.vue";
