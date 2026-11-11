@@ -6,7 +6,8 @@
     <template #content>
       <div class="calendar">
         <!-- Hinweise über dem Kalender, in dieser Rangfolge: Laden beim Start, keine Verbindung und
-             fehlende Freischaltung auf allen Tabs, fehlende Semestergruppen nur im Veranstaltungs-Tab -->
+             fehlende Freischaltung auf allen Tabs, fehlende Semestergruppen nur im Veranstaltungs-Tab,
+             fehlende Auswahl in der Seitenleiste in den übrigen Tabs -->
         <loading-hint v-if="!connectionStore.initialLoadDone" />
         <connection-error-hint v-else-if="connectionStore.hasConnectionError" />
         <access-denied-hint
@@ -14,6 +15,10 @@
           :username="connectionStore.accessDenied.username"
         />
         <no-study-groups-hint v-else-if="noStudyGroups" />
+        <no-selection-hint
+          v-else-if="view.tab !== Tab.COURSE && viewStore.selectedId === null"
+          :tab="view.tab"
+        />
         <vue-cal
           :key="view.tab"
           v-bind="timetableConfig"
@@ -75,6 +80,7 @@
   import HelpDialog from "@/components/HelpDialog.vue";
   import { useUndoShortcuts } from "@/composables/useUndoShortcuts";
   import NoStudyGroupsHint from "@/components/HintCards/NoStudyGroupsHint.vue";
+  import NoSelectionHint from "@/components/HintCards/NoSelectionHint.vue";
   import AccessDeniedHint from "@/components/HintCards/AccessDeniedHint.vue";
   import ConnectionErrorHint from "@/components/HintCards/ConnectionErrorHint.vue";
   import LoadingHint from "@/components/HintCards/LoadingHint.vue";
