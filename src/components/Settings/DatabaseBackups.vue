@@ -365,9 +365,24 @@
     display: inline-flex;
   }
 
-  /* Die Liste ist sonst auf die Breite der Seitenleiste begrenzt */
+  /* Die Liste ist sonst auf die Breite der Seitenleiste begrenzt;
+     hier füllt sie die Breite und schließt bündig mit den Überschriften ab (wie in ViewPanel) */
   .backups .backup-list {
     max-width: none;
+  }
+
+  .backup-list :deep(.search-bar) {
+    padding: 0 0 0.25rem;
+  }
+
+  .backup-list :deep(.sort-toolbar) {
+    margin-left: 0 !important;
+    padding-inline: 0 !important;
+  }
+
+  .backup-list :deep(.list-box) {
+    margin-inline: 0;
+    padding-inline: 0;
   }
 
   .backup {
