@@ -17,6 +17,7 @@ import type {
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useNotification } from "@/composables/useNotification";
+import { i18n } from "@/i18n";
 import {
   mapApiCourseLecturerViolation,
   mapApiIgnoredResourceConflict,
@@ -29,6 +30,7 @@ import { useStudyGroupStore } from "./studyGroupStore";
 
 export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   const { showError, handleError } = useNotification();
+  const { t } = i18n.global;
   const lecturerStore = useLecturerStore();
   const roomStore = useRoomStore();
   const studyGroupStore = useStudyGroupStore();
@@ -86,7 +88,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   function readResourceConflict(id: string): ResourceConflict | undefined {
     const conflict = resourceConflictsMap.value.get(id);
     if (conflict === undefined) {
-      showError("Fehler", "Konflikt konnte nicht gefunden werden.");
+      showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.notFound"));
     }
     return conflict;
   }
@@ -100,7 +102,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   function readIgnoredResourceConflict(id: string): IgnoredResourceConflict | undefined {
     const conflict = ignoredResourceConflictsMap.value.get(id);
     if (conflict === undefined) {
-      showError("Fehler", "Konflikt konnte nicht gefunden werden.");
+      showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.notFound"));
     }
     return conflict;
   }
@@ -111,7 +113,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   async function loadResourceConflicts() {
     const apiConflicts = await getAllResourceConflictsApi();
     if (apiConflicts === undefined) {
-      showError("Fehler", "Ressourcenkonflikte konnten nicht geladen werden");
+      showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.loadFailed"));
       return;
     }
 
@@ -155,7 +157,10 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
       getIgnoredCourseLecturerViolationsApi(),
     ]);
     if (apiViolations === undefined || ignored === undefined) {
-      showError("Fehler", "Veranstaltungen nur mit Laboringenieur konnten nicht geladen werden");
+      showError(
+        t("conflictsPopUp.errors.title"),
+        t("conflictsPopUp.errors.loadLabEngineersFailed")
+      );
       return;
     }
     courseLecturerViolations.value = apiViolations.map(v => mapApiCourseLecturerViolation(v));
@@ -174,7 +179,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
         await loadCourseLecturerViolations();
       }
     } catch (error) {
-      handleError(error as Error, "Ein Fehler ist bei der Bearbeitung des Konflikts aufgetreten.");
+      handleError(error as Error, t("conflictsPopUp.errors.updateFailed"));
     }
   }
 
@@ -184,7 +189,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   async function loadIgnoredResourceConflicts() {
     const apiIgnoredConflicts = await getIgnoredResourceConflictsApi();
     if (apiIgnoredConflicts === undefined) {
-      showError("Fehler", "Ignorierte Ressourcenkonflikte konnten nicht geladen werden");
+      showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.loadIgnoredFailed"));
       return;
     }
 
@@ -302,7 +307,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
       changeResourceConflictToIgnored(conflict);
     } catch (error) {
       const e = error as Error;
-      handleError(e, "Ein Fehler ist bei der Bearbeitung des Konflikts aufgetreten.");
+      handleError(e, t("conflictsPopUp.errors.updateFailed"));
     }
   }
 
@@ -330,7 +335,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
       removeIgnoredResourceConflictFromMap(ignoredConflict);
     } catch (error) {
       const e = error as Error;
-      handleError(e, "Ein Fehler ist bei der Bearbeitung des Konflikts aufgetreten.");
+      handleError(e, t("conflictsPopUp.errors.updateFailed"));
     }
   }
 
@@ -354,7 +359,7 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
       const resourceConflicts = await getConflictsForResourceApi(resourceType, resourceId);
 
       if (resourceConflicts === undefined) {
-        showError("Fehler", "Fehler beim Laden des Konflikts");
+        showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.loadOneFailed"));
         return;
       }
 
@@ -363,33 +368,14 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
         .find(c => c.slotA === slotA && c.slotB === slotB);
 
       if (conflict === undefined) {
-        showError("Fehler", "Konflikt konnte nicht gefunden werden");
+        showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.notFound"));
         return;
       }
 
       return conflict;
     } catch (error) {
       const e = error as Error;
-      handleError(e, "Konflikt konnte nicht gefunden werden.");
-    }
-  }
-
-  /**
-   * Hilfsfunktion zur Umwandlung des Ressourcentyps zu einem deutschsprachigen String
-   *
-   * @param resourceType - Art der Ressource
-   * @returns deutschsprachige Bezeichnung des Ressourcentyps
-   */
-  function getResourceTypeString(resourceType: ResourceType): string {
-    switch (resourceType) {
-      case "lecturer":
-        return "Lehrperson";
-      case "room":
-        return "Raum";
-      case "study_group":
-        return "Semestergruppe";
-      default:
-        return "Ressource";
+      handleError(e, t("conflictsPopUp.errors.notFound"));
     }
   }
 
@@ -438,7 +424,6 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     unignoreConflict,
     addResourceConflictToMap,
     addIgnoredResourceConflictToMap,
-    getResourceTypeString,
     getResourceDisplayString,
   };
 });

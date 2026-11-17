@@ -37,7 +37,6 @@ export type ResourceConflictDisplay = {
   slotB: number;
   resourceType: ResourceType;
   resourceId: number;
-  resourceLabel: string;
   resource: string;
   time: string;
   active: boolean;

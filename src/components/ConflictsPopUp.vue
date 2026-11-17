@@ -9,24 +9,28 @@
         <b-button
           :variant="selectedResourceType === '' ? 'secondary' : 'outline-secondary'"
           @click="selectedResourceType = ''"
+          :title="t('conflictsPopUp.hints.allResources')"
         >
           {{ t("conflictsPopUp.filterAll") }}
         </b-button>
         <b-button
           :variant="selectedResourceType === 'lecturer' ? 'secondary' : 'outline-secondary'"
           @click="selectedResourceType = 'lecturer'"
+          :title="t(resourceHint.lecturer)"
         >
           <user />
         </b-button>
         <b-button
           :variant="selectedResourceType === 'study_group' ? 'secondary' : 'outline-secondary'"
           @click="selectedResourceType = 'study_group'"
+          :title="t(resourceHint.study_group)"
         >
           <users />
         </b-button>
         <b-button
           :variant="selectedResourceType === 'room' ? 'secondary' : 'outline-secondary'"
           @click="selectedResourceType = 'room'"
+          :title="t(resourceHint.room)"
           style="min-width: 60px"
         >
           <school />
@@ -37,18 +41,21 @@
         <b-button
           :variant="selectedStatus === '' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = ''"
+          :title="t('conflictsPopUp.hints.allStatuses')"
         >
           {{ t("conflictsPopUp.statusAll") }}
         </b-button>
         <b-button
           :variant="selectedStatus === 'active' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = 'active'"
+          :title="t('conflictsPopUp.hints.active')"
         >
           {{ t("conflictsPopUp.active") }}
         </b-button>
         <b-button
           :variant="selectedStatus === 'ignored' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = 'ignored'"
+          :title="t('conflictsPopUp.hints.ignored')"
         >
           {{ t("conflictsPopUp.ignored") }}
         </b-button>
@@ -68,11 +75,11 @@
       class="mt-2 mb-1 p-3 border rounded d-flex justify-content-between align-items-center"
     >
       <div :class="{ 'opacity-50': !violation.active }">
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.course')">
           <calendar :size="20" />
           {{ violation.course }}
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.labEngineer')">
           <flask-conical :size="20" />
           {{ violation.message }}
         </div>
@@ -82,11 +89,15 @@
         <calendar-search-button
           :size="32"
           :ignored="!violation.active"
+          :title="t('conflictsPopUp.hints.showLabEngineer')"
           @click="openLabEngineerView(violation.courseId)"
         />
 
         <b-form-checkbox
           switch
+          :title="
+            t(violation.active ? 'conflictsPopUp.hints.ignore' : 'conflictsPopUp.hints.reactivate')
+          "
           :model-value="violation.active"
           @update:model-value="
             () =>
@@ -105,17 +116,20 @@
       class="mt-2 mb-1 p-3 border rounded d-flex justify-content-between align-items-center"
     >
       <div :class="{ 'opacity-50': !conflict.active }">
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.courses')">
           <calendar :size="20" />
           {{ conflict.courseA }} & {{ conflict.courseB }}
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div
+          class="d-flex align-items-center gap-2"
+          :title="t(resourceHint[conflict.resourceType])"
+        >
           <user :size="20" v-if="conflict.resourceType === 'lecturer'" />
           <users :size="20" v-if="conflict.resourceType === 'study_group'" />
           <school :size="20" v-if="conflict.resourceType === 'room'" />
           {{ conflict.resource }}
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.time')">
           <clock :size="20" />
           {{ conflict.time }}
         </div>
@@ -125,11 +139,15 @@
         <calendar-search-button
           :size="32"
           :ignored="!conflict.active"
+          :title="t('conflictsPopUp.hints.showInCalendar')"
           @click="openConflictView(conflict)"
         />
 
         <b-form-checkbox
           switch
+          :title="
+            t(conflict.active ? 'conflictsPopUp.hints.ignore' : 'conflictsPopUp.hints.reactivate')
+          "
           :model-value="conflict.active"
           @update:model-value="() => toggleConflict(conflict)"
           size="lg"
@@ -160,7 +178,7 @@
   import { useViewStore } from "@/stores/viewStore";
   import { LecturerKind } from "@/enums/enums";
 
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const conflictStore = useResourceConflictStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
@@ -170,6 +188,12 @@
   const query = ref<string>("");
   const selectedResourceType = ref<ResourceType | "">("");
   const selectedStatus = ref<"active" | "ignored" | "">("");
+
+  const resourceHint: Record<ResourceType, string> = {
+    lecturer: "conflictsPopUp.hints.lecturer",
+    study_group: "conflictsPopUp.hints.studyGroup",
+    room: "conflictsPopUp.hints.room",
+  };
 
   const conflictDisplay: ComputedRef<ResourceConflictDisplay[]> = computed(() => {
     const active = conflictStore.resourceConflictsList.map(c => mapConflictForDisplay(c));
@@ -276,7 +300,6 @@
       slotB: conflict.slotB,
       resourceType: conflict.resourceType,
       resourceId: conflict.resourceId,
-      resourceLabel: conflictStore.getResourceTypeString(conflict.resourceType),
       resource: conflictStore.getResourceDisplayString(conflict.resourceType, conflict.resourceId),
       time: getRelevantTimeFrame(conflict.slotA, conflict.slotB),
       active: true,
@@ -300,7 +323,6 @@
       slotB: conflict.slotB,
       resourceType: conflict.resourceType,
       resourceId: conflict.resourceId,
-      resourceLabel: conflictStore.getResourceTypeString(conflict.resourceType),
       resource: conflictStore.getResourceDisplayString(conflict.resourceType, conflict.resourceId),
       time: getRelevantTimeFrame(conflict.slotA, conflict.slotB),
       active: false,
@@ -314,7 +336,7 @@
     if (timeSlotA === undefined || timeSlotB === undefined) return "-";
     const start = new Date(Math.max(timeSlotA.start.getTime(), timeSlotB.start.getTime()));
     const end = new Date(Math.min(timeSlotA.end.getTime(), timeSlotB.end.getTime()));
-    return `${start.toLocaleDateString("de-DE", { weekday: "long" })} ${start.getHours().toString().padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")} - ${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`;
+    return `${start.toLocaleDateString(locale.value, { weekday: "long" })} ${start.getHours().toString().padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")} - ${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`;
   }
 
   function searchConflicts(searchText: string) {
