@@ -1,6 +1,6 @@
 <template>
-  <hint-card :title="text[tab].title">
-    <p class="m-0">{{ text[tab].body }}</p>
+  <hint-card :title="t(`hintCards.noSelectionHint.${keys[tab]}.title`)">
+    <p class="m-0">{{ t(`hintCards.noSelectionHint.${keys[tab]}.body`) }}</p>
     <!-- Pfeil zur Liste in der Seitenleiste, an der Stelle der Knöpfe anderer Hinweise -->
     <template #actions>
       <arrow-left class="arrow" :size="40" aria-hidden="true" />
@@ -12,6 +12,9 @@
   import { ArrowLeft } from "lucide-vue-next";
   import { Tab } from "@/enums/enums";
   import HintCard from "./HintCard.vue";
+  import { useI18n } from "vue-i18n";
+
+  const { t } = useI18n();
 
   /**
    * Hinweis in den Tabs Lehrpersonen, Semestergruppen, Studiengänge und Räume,
@@ -22,23 +25,12 @@
     tab: Exclude<Tab, Tab.COURSE>;
   }>();
 
-  const text: Record<Exclude<Tab, Tab.COURSE>, { title: string; body: string }> = {
-    [Tab.LECTURER]: {
-      title: "Keine Lehrperson ausgewählt",
-      body: "Wähle links eine Lehrperson aus, um ihren Stundenplan zu sehen.",
-    },
-    [Tab.STUDYGROUP]: {
-      title: "Keine Semestergruppe ausgewählt",
-      body: "Wähle links eine Semestergruppe aus, um ihren Stundenplan zu sehen.",
-    },
-    [Tab.DEGREEPROGRAM]: {
-      title: "Kein Studiengang ausgewählt",
-      body: "Wähle links einen Studiengang aus, um die Stundenpläne seiner Semestergruppen zu sehen.",
-    },
-    [Tab.ROOM]: {
-      title: "Kein Raum ausgewählt",
-      body: "Wähle links einen Raum aus, um seine Belegung zu sehen.",
-    },
+  /** Name des Tabs in hintCards.noSelectionHint.* der Locales */
+  const keys: Record<Exclude<Tab, Tab.COURSE>, string> = {
+    [Tab.LECTURER]: "lecturer",
+    [Tab.STUDYGROUP]: "studyGroup",
+    [Tab.DEGREEPROGRAM]: "degreeProgram",
+    [Tab.ROOM]: "room",
   };
 </script>
 

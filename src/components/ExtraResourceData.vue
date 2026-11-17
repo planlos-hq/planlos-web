@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p class="m-0 p-0 mt-4">zusätzliche Daten:</p>
+    <p class="m-0 p-0 mt-4">{{ t("common.extraData") }}</p>
     <div class="d-flex flex-column justify-content-center align-items-center gap-2">
       <p v-if="localPairs.length === 0" class="m-0">------------</p>
       <key-value-input
@@ -20,9 +20,11 @@
 
 <script setup lang="ts">
   import { ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import PlusButton from "./IconButtons/PlusButton.vue";
   import KeyValueInput from "./KeyValueInput.vue";
 
+  const { t } = useI18n();
   type KeyValuePair = { id: number; key: string; value: string };
 
   const data = defineModel<Record<string, string>>({ default: () => ({}) });

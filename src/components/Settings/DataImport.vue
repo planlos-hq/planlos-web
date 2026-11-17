@@ -1,8 +1,7 @@
 <template>
   <div>
     <p class="text-muted small mb-3">
-      Lade eine CSV- oder Excel-Datei (.xlsx) hoch. Der Typ wird anhand der Kopfzeile automatisch
-      erkannt.
+      {{ t("settings.import.description") }}
     </p>
 
     <file-drop-zone
@@ -14,7 +13,7 @@
     <div class="d-flex justify-content-end mt-3">
       <b-button variant="primary" :disabled="!selectedFile || isImporting" @click="submitImport">
         <b-spinner v-if="isImporting" small class="me-1" />
-        {{ isImporting ? "Wird importiert…" : "Importieren" }}
+        {{ isImporting ? t("settings.import.submitting") : t("common.import") }}
       </b-button>
     </div>
 
@@ -33,6 +32,7 @@
 
 <script setup lang="ts">
   import { ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BAlert, BButton, BSpinner } from "bootstrap-vue-next";
   import FileDropZone from "./FileDropZone.vue";
   import { useNotification } from "@/composables/useNotification";
@@ -41,6 +41,7 @@
   /** CSV/Excel-Import: Datei wählen oder hineinziehen, dann importieren */
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
 
+  const { t } = useI18n();
   const { showSuccess, handleError } = useNotification();
 
   const selectedFile = ref<File | null>(null);
@@ -68,8 +69,8 @@
       });
 
       if (response.ok) {
-        importResult.value = { success: true, message: "Import erfolgreich abgeschlossen." };
-        showSuccess("Daten erfolgreich importiert!");
+        importResult.value = { success: true, message: t("settings.import.success") };
+        showSuccess(t("settings.import.successToast"));
         selectedFile.value = null;
         await reloadAllData();
       } else if (response.status === 400 || response.status === 422) {
@@ -78,17 +79,19 @@
         importResult.value = {
           success: false,
           message:
-            serverMessage !== "" ? serverMessage : `Fehler beim Import (${response.statusText})`,
+            serverMessage !== ""
+              ? serverMessage
+              : t("settings.import.importError", { status: response.statusText }),
         };
       } else {
         importResult.value = {
           success: false,
-          message: `Serverfehler (${response.status}). Bitte erneut versuchen.`,
+          message: t("settings.import.serverError", { status: response.status }),
         };
       }
     } catch (error) {
-      handleError(error as Error, "Import fehlgeschlagen.");
-      importResult.value = { success: false, message: "Netzwerkfehler beim Import." };
+      handleError(error as Error, t("settings.import.failedToast"));
+      importResult.value = { success: false, message: t("settings.import.networkError") };
     } finally {
       isImporting.value = false;
     }

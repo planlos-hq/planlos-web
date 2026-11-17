@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { i18n } from "@/i18n";
 import { useViewStore } from "@/stores/viewStore";
 import { Tab } from "@/enums/enums";
 
@@ -25,7 +26,7 @@ export function usePdfExport() {
   async function exportToPdf() {
     const calendarEl = document.querySelector(".vuecal") as HTMLElement | null;
     if (!calendarEl) {
-      exportError.value = "Kalender nicht gefunden.";
+      exportError.value = i18n.global.t("common.calendarNotFound");
       return;
     }
     exporting.value = true;
@@ -106,7 +107,7 @@ export function usePdfExport() {
       pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
       pdf.save(`${pdfFilename.value}.pdf`);
     } catch (e) {
-      exportError.value = "Export fehlgeschlagen. Bitte versuche es erneut.";
+      exportError.value = i18n.global.t("common.exportFailed");
       // eslint-disable-next-line no-console
       console.error(e);
     } finally {

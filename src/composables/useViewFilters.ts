@@ -5,14 +5,15 @@ import type { StudyGroup } from "@/models/StudyGroup";
 import { useStudyGroupStore } from "@/stores/studyGroupStore";
 import { useViewStore } from "@/stores/viewStore";
 
+/** Wochentage mit i18n-Keys für Name und Kürzel (siehe weekdays.* in den Locales) */
 export const weekdays = [
-  { text: "Montag", short: "Mo", value: WeekDays.MONTAG },
-  { text: "Dienstag", short: "Di", value: WeekDays.DIENSTAG },
-  { text: "Mittwoch", short: "Mi", value: WeekDays.MITTWOCH },
-  { text: "Donnerstag", short: "Do", value: WeekDays.DONNERSTAG },
-  { text: "Freitag", short: "Fr", value: WeekDays.FREITAG },
-  { text: "Samstag", short: "Sa", value: WeekDays.SAMSTAG },
-  { text: "Sonntag", short: "So", value: WeekDays.SONNTAG },
+  { key: "monday", value: WeekDays.MONTAG },
+  { key: "tuesday", value: WeekDays.DIENSTAG },
+  { key: "wednesday", value: WeekDays.MITTWOCH },
+  { key: "thursday", value: WeekDays.DONNERSTAG },
+  { key: "friday", value: WeekDays.FREITAG },
+  { key: "saturday", value: WeekDays.SAMSTAG },
+  { key: "sunday", value: WeekDays.SONNTAG },
 ];
 
 const normalize = (s: string) =>

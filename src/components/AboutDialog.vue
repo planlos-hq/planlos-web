@@ -1,7 +1,12 @@
 <template>
-  <base-info-button label="About" title="Über uns" :offset="95" ref="baseBtn">
+  <base-info-button
+    :label="t('infoDialogs.about')"
+    :title="t('infoDialogs.about')"
+    :offset="95"
+    ref="baseBtn"
+  >
     <template #label>
-      <span @click.stop="openAbout">Über uns</span>
+      <span @click.stop="openAbout">{{ t("infoDialogs.about") }}</span>
     </template>
     <div class="about-content text-center">
       <img src="/logo/PlanLos_logo_schrift.png" alt="PlanLos Logo" class="logo-schrift mb-4" />
@@ -13,10 +18,12 @@
 
 <script setup lang="ts">
   import { ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import BaseInfoButton from "@/template/BaseInfoButton.vue";
   import InfoSectionContent from "@/components/InfoSectionContent.vue";
   import { resolveAssetUrl, useSiteSettings } from "@/composables/useSiteSettings";
 
+  const { t } = useI18n();
   const baseBtn = ref();
   const currentImage = ref("");
   const settings = useSiteSettings();

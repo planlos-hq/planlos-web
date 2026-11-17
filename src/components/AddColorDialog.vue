@@ -1,9 +1,9 @@
 <template>
   <b-modal
-    title="Neue Farbe hinzufügen"
+    :title="t('colorDialog.addTitle')"
     centered
     @ok="validate"
-    ok-title="Hinzufügen"
+    :ok-title="t('common.add')"
     ok-variant="primary"
     ok-only
     lazy
@@ -17,11 +17,15 @@
             <b-form-input type="color" class="flex-grow-1" v-model="colorChooser" />
           </div>
           <div class="d-flex flex-column flex-grow-1">
-            <b-form-floating-label label="Bedeutung" label-for="meaning" class="flex-grow-1">
+            <b-form-floating-label
+              :label="t('colorDialog.meaning')"
+              label-for="meaning"
+              class="flex-grow-1"
+            >
               <b-form-input
                 id="meaning"
                 type="text"
-                placeholder="Bedeutung"
+                :placeholder="t('colorDialog.meaning')"
                 v-model="meaning"
                 :state="meaningValidation"
                 required
@@ -31,7 +35,7 @@
         </div>
         <!--Eine Bedeutung ist gültig, sobald ein Zeichen drin ist-->
         <b-form-invalid-feedback :state="meaningValidation" class="text-center">
-          Bitte geben Sie eine gültige Bedeutung ein!
+          {{ t("colorDialog.meaningRequired") }}
         </b-form-invalid-feedback>
       </b-form>
     </div>
@@ -47,9 +51,11 @@
     BFormInvalidFeedback,
   } from "bootstrap-vue-next";
   import { computed, ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import { useColorStore } from "@/stores/colorStore";
   import ColorPalette from "./ColorPalette.vue";
 
+  const { t } = useI18n();
   const colorChooser = ref<string>("#000000");
   const meaning = ref<string>("");
   const colorStore = useColorStore();

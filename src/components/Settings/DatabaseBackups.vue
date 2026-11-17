@@ -1,34 +1,33 @@
 <template>
   <div class="backups">
     <section class="block" data-setting="backups-create">
-      <h3>Sicherung erstellen</h3>
+      <h3>{{ t("settings.backups.create") }}</h3>
       <p class="text-muted small">
-        Eine Sicherung enthält alle Daten (ohne Zugriffsrechte). Sie wird heruntergeladen und
-        zusätzlich auf dem Server abgelegt.
+        {{ t("settings.backups.createDescription") }}
       </p>
       <form class="create" @submit.prevent="createBackup">
         <form-input
           v-model="comment"
           type="text"
-          placeholder="Name der Sicherung (optional)"
+          :placeholder="t('settings.backups.namePlaceholder')"
           :required="false"
           :disabled="busy !== null"
         />
         <b-button type="submit" variant="primary" class="text-nowrap" :disabled="busy !== null">
           <b-spinner v-if="busy === 'create'" small class="me-1" />
           <database-backup v-else :size="16" class="me-1" />
-          Sicherung erstellen
+          {{ t("settings.backups.create") }}
         </b-button>
       </form>
     </section>
 
     <section class="block" data-setting="backups-list">
-      <h3>Auf dem Server</h3>
+      <h3>{{ t("settings.backups.serverTitle") }}</h3>
       <div v-if="loading && backups.length === 0" class="empty"><b-spinner small /></div>
       <p v-else-if="loadError && backups.length === 0" class="empty text-danger">
         {{ loadError }}
       </p>
-      <p v-else-if="backups.length === 0" class="empty">Noch keine Sicherungen vorhanden.</p>
+      <p v-else-if="backups.length === 0" class="empty">{{ t("settings.backups.empty") }}</p>
       <list-with-search
         v-else
         class="backup-list"
@@ -43,7 +42,7 @@
           <div class="backup">
             <span class="text">
               <span class="name" :class="{ none: b.comment === '' }">
-                {{ b.comment || "Ohne Namen" }}
+                {{ b.comment || t("settings.backups.unnamed") }}
               </span>
               <span class="date">{{ formatDate(b.createdAt) }}</span>
             </span>
@@ -52,7 +51,7 @@
               <b-button
                 variant="outline-secondary"
                 size="sm"
-                title="Herunterladen"
+                :title="t('common.download')"
                 :disabled="busy !== null"
                 @click.stop="run(b.id, () => downloadBackupApi(b.id))"
               >
@@ -61,7 +60,7 @@
               <b-button
                 variant="outline-secondary"
                 size="sm"
-                title="Wiederherstellen"
+                :title="t('settings.backups.restore')"
                 :disabled="busy !== null"
                 @click.stop="askRestore(b)"
               >
@@ -70,7 +69,7 @@
               <b-button
                 variant="outline-danger"
                 size="sm"
-                title="Löschen"
+                :title="t('common.delete')"
                 :disabled="busy !== null"
                 @click.stop="askDelete(b)"
               >
@@ -83,10 +82,9 @@
     </section>
 
     <section class="block" data-setting="backups-file">
-      <h3>Aus Datei wiederherstellen</h3>
+      <h3>{{ t("settings.backups.fileTitle") }}</h3>
       <p class="text-muted small">
-        Lade eine heruntergeladene Sicherung (.zip) hoch. Alle aktuellen Daten werden ersetzt; der
-        jetzige Stand wird vorher auf dem Server gesichert.
+        {{ t("settings.backups.fileDescription") }}
       </p>
       <file-drop-zone
         :model-value="selectedFile"
@@ -100,17 +98,16 @@
           @click="askRestoreFile"
         >
           <b-spinner v-if="busy === 'file'" small class="me-1" />
-          {{ busy === "file" ? "Wird wiederhergestellt…" : "Wiederherstellen" }}
+          {{ busy === "file" ? t("settings.backups.restoring") : t("settings.backups.restore") }}
         </b-button>
       </div>
     </section>
 
     <section class="block" data-setting="backups-clear">
-      <h3>Datenbank leeren</h3>
+      <h3>{{ t("settings.backups.clear") }}</h3>
       <div class="danger">
         <span class="small text-muted">
-          Löscht alle Daten (Zugriffsrechte bleiben). Vorher wird automatisch eine Sicherung
-          erstellt und heruntergeladen.
+          {{ t("settings.backups.clearDescription") }}
         </span>
         <b-button
           variant="outline-danger"
@@ -121,7 +118,7 @@
         >
           <b-spinner v-if="busy === 'truncate'" small class="me-1" />
           <eraser v-else :size="16" class="me-1" />
-          Datenbank leeren
+          {{ t("settings.backups.clear") }}
         </b-button>
       </div>
     </section>
@@ -142,7 +139,8 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref } from "vue";
+  import { computed, onMounted, ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BButton, BSpinner } from "bootstrap-vue-next";
   import { ArchiveRestore, DatabaseBackup, Download, Eraser, Trash2 } from "lucide-vue-next";
   import DeleteDialog from "../DeleteDialog.vue";
@@ -168,6 +166,7 @@
    * Sicherungen der ganzen Datenbank: erstellen, herunterladen, wiederherstellen und löschen.
    * Vor jedem Wiederherstellen wird der aktuelle Stand automatisch auf dem Server gesichert.
    */
+  const { t } = useI18n();
   const { showSuccess, showError, handleError } = useNotification();
 
   const backups = ref<Backup[]>([]);
@@ -181,16 +180,19 @@
   /** Hochgeladene Sicherung, die wiederhergestellt werden soll */
   const selectedFile = ref<File | null>(null);
 
-  const sortOptions: SortOption<Backup>[] = [
-    { label: "Datum", comparator: (a, b) => b.createdAt.localeCompare(a.createdAt) },
+  const sortOptions = computed<SortOption<Backup>[]>(() => [
     {
-      label: "Name",
+      label: t("settings.backups.sort.date"),
+      comparator: (a, b) => b.createdAt.localeCompare(a.createdAt),
+    },
+    {
+      label: t("common.name"),
       // Sicherungen ohne Namen ans Ende
       comparator: (a, b) =>
         Number(a.comment === "") - Number(b.comment === "") ||
         a.comment.localeCompare(b.comment, "de"),
     },
-  ];
+  ]);
 
   /** Aktion, die erst nach Eintippen von „Bestätigen“ ausgeführt wird */
   type Pending = {
@@ -216,7 +218,7 @@
     try {
       backups.value = await listBackupsApi();
     } catch (error) {
-      loadError.value = (error as Error).message || "Sicherungen konnten nicht geladen werden.";
+      loadError.value = (error as Error).message || t("settings.backups.loadFailed");
     } finally {
       loading.value = false;
     }
@@ -233,7 +235,7 @@
         showSuccess(success);
       }
     } catch (error) {
-      handleError(error as Error, "Sicherung fehlgeschlagen");
+      handleError(error as Error, t("settings.backups.failed"));
     } finally {
       busy.value = null;
       await loadBackups();
@@ -248,19 +250,18 @@
         await createBackupApi(comment.value.trim());
         comment.value = "";
       },
-      "Sicherung erstellt und heruntergeladen."
+      t("settings.backups.created")
     );
   }
 
   /** Sichert den aktuellen Stand, ersetzt dann alle Daten und lädt sie neu */
   async function replaceDatabase(replace: () => Promise<void>) {
-    await createBackupApi("Automatisch vor dem Wiederherstellen", false);
+    await createBackupApi(t("settings.backups.autoBeforeRestore"), false);
     await replace();
     await reloadAfterDumpImport();
   }
 
-  const replaceWarning =
-    "Alle aktuellen Daten werden ersetzt. Der jetzige Stand wird vorher automatisch auf dem Server gesichert.";
+  const replaceWarning = () => t("settings.backups.replaceWarning");
 
   function ask(p: Pending) {
     pending.value = p;
@@ -276,12 +277,12 @@
 
   function askRestore(b: Backup) {
     ask({
-      title: "Sicherung wiederherstellen?",
-      okTitle: "Wiederherstellen",
-      action: "die Sicherung wiederherzustellen",
+      title: t("settings.backups.restoreDialogTitle"),
+      okTitle: t("settings.backups.restore"),
+      action: t("settings.backups.restoreAction"),
       subject: `${formatDate(b.createdAt)}${b.comment ? ` – ${b.comment}` : ""}`,
-      warning: replaceWarning,
-      success: "Sicherung wiederhergestellt.",
+      warning: replaceWarning(),
+      success: t("settings.backups.restored"),
       key: b.id,
       run: () => replaceDatabase(() => restoreBackupApi(b.id)),
     });
@@ -289,9 +290,9 @@
 
   function askDelete(b: Backup) {
     ask({
-      title: "Sicherung löschen?",
-      okTitle: "Löschen",
-      action: "die Sicherung zu löschen",
+      title: t("settings.backups.deleteDialogTitle"),
+      okTitle: t("common.delete"),
+      action: t("settings.backups.deleteAction"),
       subject: `${formatDate(b.createdAt)}${b.comment ? ` – ${b.comment}` : ""}`,
       key: b.id,
       run: () => deleteBackupApi(b.id),
@@ -300,13 +301,12 @@
 
   function askTruncate() {
     ask({
-      title: "Datenbank leeren?",
-      okTitle: "Datenbank leeren",
-      action: "alle Daten zu löschen",
-      subject: "Alle Veranstaltungen, Termine, Lehrpersonen, Räume und Semestergruppen",
-      warning:
-        "Alle Daten werden gelöscht. Der jetzige Stand wird vorher auf dem Server gesichert und heruntergeladen.",
-      success: "Datenbank geleert. Die Sicherung wurde heruntergeladen.",
+      title: t("settings.backups.clearDialogTitle"),
+      okTitle: t("settings.backups.clear"),
+      action: t("settings.backups.clearAction"),
+      subject: t("settings.backups.clearSubject"),
+      warning: t("settings.backups.clearWarning"),
+      success: t("settings.backups.cleared"),
       key: "truncate",
       run: async () => {
         await truncateDatabaseApi();
@@ -317,7 +317,7 @@
 
   function selectFile(file: File) {
     if (file.size > maxDumpSize) {
-      showError("Datei zu groß", "Sicherungen dürfen höchstens 15 MB groß sein.");
+      showError(t("settings.backups.tooLargeTitle"), t("settings.backups.tooLarge"));
       return;
     }
     selectedFile.value = file;
@@ -327,12 +327,12 @@
     const file = selectedFile.value;
     if (!file) return;
     ask({
-      title: "Aus Datei wiederherstellen?",
-      okTitle: "Wiederherstellen",
-      action: "die Sicherung wiederherzustellen",
+      title: t("settings.backups.fileDialogTitle"),
+      okTitle: t("settings.backups.restore"),
+      action: t("settings.backups.restoreAction"),
       subject: file.name,
-      warning: replaceWarning,
-      success: "Sicherung wiederhergestellt.",
+      warning: replaceWarning(),
+      success: t("settings.backups.restored"),
       key: "file",
       run: async () => {
         await replaceDatabase(() => importDumpApi(file));

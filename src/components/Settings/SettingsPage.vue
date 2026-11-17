@@ -1,7 +1,7 @@
 <template>
   <b-modal
     :show="modelValue"
-    title="Einstellungen"
+    :title="t('settings.page.title')"
     size="xl"
     scrollable
     no-footer
@@ -11,18 +11,22 @@
     @hidden="isShown = false"
   >
     <div class="settings">
-      <nav class="settings-nav" aria-label="Bereiche der Einstellungen">
+      <nav class="settings-nav" :aria-label="t('settings.page.navLabel')">
         <!-- Wie die Suchleiste der Listen (SearchBar.vue), mit Enter und Sprung zum ersten Treffer -->
         <b-input-group class="mb-2">
           <b-form-input
             v-model="query"
             type="search"
-            placeholder="Suche..."
-            aria-label="Einstellungen durchsuchen, z. B. Wochentage, PDF oder Import"
+            :placeholder="t('common.searchPlaceholder')"
+            :aria-label="t('settings.page.searchLabel')"
             @keydown.enter.prevent="jumpToFirst"
           />
           <template #append>
-            <b-button variant="primary" aria-label="Zum ersten Treffer" @click="jumpToFirst">
+            <b-button
+              variant="primary"
+              :aria-label="t('settings.page.firstResult')"
+              @click="jumpToFirst"
+            >
               <search-icon :size="20" aria-hidden="true" />
             </b-button>
           </template>
@@ -30,16 +34,18 @@
 
         <!-- Beim Suchen stehen hier einzelne Einstellungen; ein Klick springt direkt hin -->
         <template v-if="query.trim() !== ''">
-          <p class="cap">Treffer</p>
+          <p class="cap">{{ t("settings.page.results") }}</p>
           <button v-for="r in results" :key="r.id" type="button" class="result" @click="jump(r)">
             <span>{{ r.label }}</span>
             <small>{{ sectionTitle(r.section) }}</small>
           </button>
-          <p v-if="results.length === 0" class="empty">Keine Treffer für „{{ query }}“</p>
+          <p v-if="results.length === 0" class="empty">
+            {{ t("settings.page.noResults", { query }) }}
+          </p>
         </template>
 
         <template v-else>
-          <p class="cap">Allgemein</p>
+          <p class="cap">{{ t("settings.page.general") }}</p>
           <button
             v-for="s in sections"
             :key="s.id"
@@ -66,11 +72,11 @@
 
         <template v-else>
           <section class="block" data-setting="import">
-            <h3>Importieren</h3>
+            <h3>{{ t("common.import") }}</h3>
             <data-import />
           </section>
           <section class="block">
-            <h3>Exportieren</h3>
+            <h3>{{ t("settings.page.exporting") }}</h3>
             <export-center :open="openExport" />
           </section>
         </template>
@@ -81,6 +87,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref, useTemplateRef, watch, type Component } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BButton, BFormInput, BInputGroup, BModal } from "bootstrap-vue-next";
   import { Database, DatabaseBackup, LayoutGrid, Search as SearchIcon } from "lucide-vue-next";
   import DatabaseBackups from "./DatabaseBackups.vue";
@@ -97,6 +104,8 @@
     focus?: string | null;
   }>();
 
+  const { t } = useI18n();
+
   const emit = defineEmits<{
     "update:modelValue": [value: boolean];
     "update:section": [value: string];
@@ -105,30 +114,25 @@
 
   type Section = { id: string; title: string; description: string; icon: Component };
 
-  const sections: Section[] = [
-    {
-      id: "view",
-      title: "Ansicht",
-      description: "Wochentage, Pausen und Semestergruppen der Planungsansicht.",
-      icon: LayoutGrid,
-    },
-    {
-      id: "data",
-      title: "Daten",
-      description: "Ressourcen importieren sowie den Stundenplan und Tabellen exportieren.",
-      icon: Database,
-    },
-    {
-      id: "backups",
-      title: "Sicherungen",
-      description: "Die ganze Datenbank sichern, wiederherstellen oder leeren.",
-      icon: DatabaseBackup,
-    },
+  const sectionDefs: { id: string; icon: Component }[] = [
+    { id: "view", icon: LayoutGrid },
+    { id: "data", icon: Database },
+    { id: "backups", icon: DatabaseBackup },
   ];
 
-  const current = computed(() => sections.find(s => s.id === props.section) ?? sections[0]!);
+  const sections = computed<Section[]>(() =>
+    sectionDefs.map(def => ({
+      ...def,
+      title: t(`settings.sections.${def.id}.title`),
+      description: t(`settings.sections.${def.id}.description`),
+    }))
+  );
 
-  const sectionTitle = (id: string) => sections.find(s => s.id === id)?.title ?? "";
+  const current = computed(
+    () => sections.value.find(s => s.id === props.section) ?? sections.value[0]!
+  );
+
+  const sectionTitle = (id: string) => sections.value.find(s => s.id === id)?.title ?? "";
 
   // --- Suche über einzelne Einstellungen ---
 
@@ -144,97 +148,48 @@
     exportKey?: string;
   };
 
-  const entries: Entry[] = [
-    { id: "view", section: "view", label: "Ansicht", terms: "anzeige", target: "" },
-    {
-      id: "weekdays",
-      section: "view",
-      label: "Wochentage",
-      terms:
-        "tage montag dienstag mittwoch donnerstag freitag samstag sonntag wochenende ausblenden",
-      target: "weekdays",
-    },
-    {
-      id: "breaks",
-      section: "view",
-      label: "Pausenzeiten anzeigen",
-      terms: "pause pausen mittag mittagspause",
-      target: "breaks",
-    },
-    {
-      id: "groups",
-      section: "view",
-      label: "Semestergruppen",
-      terms: "gruppen kohorte jahrgang studiengang auswahl filter sortieren",
-      target: "groups",
-    },
-    {
-      id: "data",
-      section: "data",
-      label: "Daten",
-      terms: "import export",
-      target: "",
-    },
-    {
-      id: "import",
-      section: "data",
-      label: "Daten importieren",
-      terms: "import csv excel xlsx hochladen upload datei",
-      target: "import",
-    },
+  /** key verweist auf settings.search.<key>.label / .terms in den Locales */
+  const entryDefs: {
+    id: string;
+    key: string;
+    section: string;
+    target: string;
+    exportKey?: string;
+  }[] = [
+    { id: "view", key: "view", section: "view", target: "" },
+    { id: "weekdays", key: "weekdays", section: "view", target: "weekdays" },
+    { id: "breaks", key: "breaks", section: "view", target: "breaks" },
+    { id: "groups", key: "groups", section: "view", target: "groups" },
+    { id: "data", key: "data", section: "data", target: "" },
+    { id: "import", key: "import", section: "data", target: "import" },
     {
       id: "export-pdf",
+      key: "exportPdf",
       section: "data",
-      label: "Stundenplan als PDF exportieren",
-      terms: "pdf drucken aushang export",
       target: "export:pdf",
       exportKey: "pdf",
     },
     {
       id: "export-tables",
+      key: "exportTables",
       section: "data",
-      label: "Tabellen exportieren (CSV / Excel)",
-      terms:
-        "csv excel xlsx tabelle export herunterladen lehrpersonen räume studiengänge semestergruppen veranstaltungen",
       target: "export:tables",
       exportKey: "tables",
     },
-    {
-      id: "backups",
-      section: "backups",
-      label: "Sicherungen",
-      terms: "backup datenbank dump sql",
-      target: "",
-    },
-    {
-      id: "backups-create",
-      section: "backups",
-      label: "Sicherung erstellen",
-      terms: "backup datenbank dump sql name herunterladen download",
-      target: "backups-create",
-    },
-    {
-      id: "backups-list",
-      section: "backups",
-      label: "Sicherungen auf dem Server",
-      terms: "backup liste wiederherstellen restore löschen herunterladen",
-      target: "backups-list",
-    },
-    {
-      id: "backups-file",
-      section: "backups",
-      label: "Sicherung aus Datei wiederherstellen",
-      terms: "backup zip hochladen upload datei restore import dump",
-      target: "backups-file",
-    },
-    {
-      id: "backups-clear",
-      section: "backups",
-      label: "Datenbank leeren",
-      terms: "löschen zurücksetzen truncate alles leer reset",
-      target: "backups-clear",
-    },
+    { id: "backups", key: "backups", section: "backups", target: "" },
+    { id: "backups-create", key: "backupsCreate", section: "backups", target: "backups-create" },
+    { id: "backups-list", key: "backupsList", section: "backups", target: "backups-list" },
+    { id: "backups-file", key: "backupsFile", section: "backups", target: "backups-file" },
+    { id: "backups-clear", key: "backupsClear", section: "backups", target: "backups-clear" },
   ];
+
+  const entries = computed<Entry[]>(() =>
+    entryDefs.map(({ key, ...def }) => ({
+      ...def,
+      label: t(`settings.search.${key}.label`),
+      terms: t(`settings.search.${key}.terms`),
+    }))
+  );
 
   const query = ref("");
 
@@ -244,7 +199,7 @@
   /** Jedes Wort muss vorkommen; Treffer im Namen stehen oben */
   const results = computed(() => {
     const words = normalize(query.value).split(/\s+/).filter(Boolean);
-    return entries
+    return entries.value
       .map(e => {
         const label = normalize(e.label);
         const text = `${label} ${normalize(`${e.terms} ${sectionTitle(e.section)}`)}`;
@@ -272,7 +227,7 @@
 
   /** Springt zur gewünschten Einstellung, sobald die Einstellungen offen sind */
   function jumpToFocus() {
-    const entry = entries.find(e => e.id === props.focus);
+    const entry = entries.value.find(e => e.id === props.focus);
     if (entry !== undefined) {
       emit("update:focus", null);
       void jump(entry);

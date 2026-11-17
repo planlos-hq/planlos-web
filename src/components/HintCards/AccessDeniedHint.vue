@@ -1,16 +1,20 @@
 <template>
-  <hint-card title="Kein Zugriff" alert>
+  <hint-card :title="t('hintCards.accessDeniedHint.title')" alert>
     <p class="m-0">
       <template v-if="username">
-        Das Konto <strong>{{ username }}</strong> ist für PlanLos nicht freigeschaltet.
+        <i18n-t keypath="hintCards.accessDeniedHint.accountNotApproved">
+          <template #username>
+            <strong>{{ username }}</strong>
+          </template>
+        </i18n-t>
       </template>
-      <template v-else>Dieses Konto ist für PlanLos nicht freigeschaltet.</template>
-      Bitte an den Administrator wenden.
+      <template v-else>{{ t("hintCards.accessDeniedHint.notEnabled") }}</template>
+      {{ t("hintCards.accessDeniedHint.goToAdmin") }}
     </p>
     <template #actions>
       <b-button variant="primary" size="lg" @click="reload">
         <rotate-ccw :size="24" aria-hidden="true" />
-        Erneut versuchen
+        {{ t("common.retry") }}
       </b-button>
     </template>
   </hint-card>
@@ -20,6 +24,9 @@
   import { BButton } from "bootstrap-vue-next";
   import { RotateCcw } from "lucide-vue-next";
   import HintCard from "./HintCard.vue";
+  import { useI18n } from "vue-i18n";
+
+  const { t } = useI18n();
 
   /**
    * Hinweis auf allen Tabs, wenn der Server den Zugriff verweigert (403).

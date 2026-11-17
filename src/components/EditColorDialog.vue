@@ -1,9 +1,9 @@
 <template>
   <b-modal
-    title="Farbe anpassen"
+    :title="t('colorDialog.editTitle')"
     centered
     @ok="validate"
-    ok-title="Bestätigen"
+    :ok-title="t('colorDialog.confirm')"
     ok-only
     lazy
     unmount-lazy
@@ -12,7 +12,7 @@
     <b-form @submit.stop.prevent>
       <b-list-group>
         <b-list-group-item class="d-flex justify-content-between align-items-center">
-          <p class="m-0 p-0">Aktueller Eintrag:</p>
+          <p class="m-0 p-0">{{ t("colorDialog.currentEntry") }}</p>
           <delete-button :size="24" class="p-1" @click="deleteColor" />
         </b-list-group-item>
         <b-list-group-item class="d-flex gap-3">
@@ -21,18 +21,22 @@
           </div>
 
           <div class="d-flex flex-column flex-grow-1">
-            <b-form-floating-label label="Bedeutung" label-for="meaning" class="flex-grow-1">
+            <b-form-floating-label
+              :label="t('colorDialog.meaning')"
+              label-for="meaning"
+              class="flex-grow-1"
+            >
               <b-form-input
                 id="meaning"
                 type="text"
-                placeholder="Bedeutung"
+                :placeholder="t('colorDialog.meaning')"
                 v-model="meaning"
                 disabled
               />
             </b-form-floating-label>
           </div>
         </b-list-group-item>
-        <b-list-group-item>Geänderter Eintrag:</b-list-group-item>
+        <b-list-group-item>{{ t("colorDialog.changedEntry") }}</b-list-group-item>
         <b-list-group-item class="d-flex gap-3 flex-column p-0 pt-3">
           <color-palette @select-color="c => (newColorChooser = c)" />
           <div class="d-flex flex-row pb-2 px-3">
@@ -41,11 +45,15 @@
             </div>
 
             <div class="d-flex flex-column flex-grow-1">
-              <b-form-floating-label label="Bedeutung" label-for="meaning" class="flex-grow-1">
+              <b-form-floating-label
+                :label="t('colorDialog.meaning')"
+                label-for="meaning"
+                class="flex-grow-1"
+              >
                 <b-form-input
                   id="meaning"
                   type="text"
-                  placeholder="Bedeutung"
+                  :placeholder="t('colorDialog.meaning')"
                   v-model="newMeaning"
                   :state="meaningValidation"
                   required
@@ -55,7 +63,7 @@
           </div>
         </b-list-group-item>
         <b-form-invalid-feedback :state="meaningValidation" class="text-center">
-          Bitte geben Sie eine gültige Bedeutung ein!
+          {{ t("colorDialog.meaningRequired") }}
         </b-form-invalid-feedback>
       </b-list-group>
     </b-form>
@@ -77,12 +85,15 @@
     BListGroupItem,
   } from "bootstrap-vue-next";
   import { computed, ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import { useColorStore } from "@/stores/colorStore";
   import type { Color } from "@/models/Color";
   import ColorPalette from "./ColorPalette.vue";
   import DeleteButton from "./IconButtons/DeleteButton.vue";
   import DeleteDialog from "./DeleteDialog.vue";
   import ColorBox from "./ColorBox.vue";
+
+  const { t } = useI18n();
 
   const props = defineProps<{
     /**aktuelle Farbe, die verändert werden kann */

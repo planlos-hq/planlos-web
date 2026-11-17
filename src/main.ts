@@ -4,6 +4,7 @@ import App from "./App.vue";
 import { router } from "./router";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
+import { i18n } from './i18n'
 
 import "./assets/main.css";
 import "./assets/vuecal-override.css";
@@ -15,6 +16,7 @@ async function init() {
   const pinia = createPinia();
   const app = createApp(App);
 
+  app.use(i18n)
   app.use(pinia);
   app.use(router);
   // Erste Navigation inkl. Wiederherstellen der gespeicherten Ansicht (router/index.ts) abwarten,

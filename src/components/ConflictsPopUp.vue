@@ -1,5 +1,5 @@
 <template>
-  <b-modal v-model="show" title="Ressourcen-Konflikte" size="md" scrollable>
+  <b-modal v-model="show" :title="t('conflictsPopUp.title')" size="md" scrollable>
     <template #footer><div></div></template>
 
     <search-bar @new-search="searchConflicts" />
@@ -10,7 +10,7 @@
           :variant="selectedResourceType === '' ? 'secondary' : 'outline-secondary'"
           @click="selectedResourceType = ''"
         >
-          Alles
+          {{ t("conflictsPopUp.filterAll") }}
         </b-button>
         <b-button
           :variant="selectedResourceType === 'lecturer' ? 'secondary' : 'outline-secondary'"
@@ -38,19 +38,19 @@
           :variant="selectedStatus === '' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = ''"
         >
-          Alle
+          {{ t("conflictsPopUp.statusAll") }}
         </b-button>
         <b-button
           :variant="selectedStatus === 'active' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = 'active'"
         >
-          Aktiv
+          {{ t("conflictsPopUp.active") }}
         </b-button>
         <b-button
           :variant="selectedStatus === 'ignored' ? 'secondary' : 'outline-secondary'"
           @click="selectedStatus = 'ignored'"
         >
-          Ignoriert
+          {{ t("conflictsPopUp.ignored") }}
         </b-button>
       </b-button-group>
     </div>
@@ -59,7 +59,7 @@
       class="no-conflict-message"
       v-if="conflictDisplay.length === 0 && labEngineerOnlyDisplay.length === 0"
     >
-      Keine Konflikte vorhanden
+      {{ t("conflictsPopUp.none") }}
     </div>
 
     <div
@@ -153,12 +153,14 @@
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
   import { BModal, BFormCheckbox, BButtonGroup, BButton } from "bootstrap-vue-next";
   import { computed, nextTick, ref, type ComputedRef } from "vue";
+  import { useI18n } from "vue-i18n";
   import SearchBar from "./SearchBar.vue";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
   import { Calendar, Clock, FlaskConical, School, User, Users } from "lucide-vue-next";
   import { useViewStore } from "@/stores/viewStore";
   import { LecturerKind } from "@/enums/enums";
 
+  const { t } = useI18n();
   const conflictStore = useResourceConflictStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
@@ -198,10 +200,7 @@
   // Veranstaltungen, denen nur Laboringenieure zugewiesen sind (Filter: Lehrperson)
   const labEngineerOnlyDisplay = computed(() => {
     if (selectedResourceType.value !== "" && selectedResourceType.value !== "lecturer") return [];
-    const message = (count: number) =>
-      count === 1
-        ? "Nur ein Laboringenieur, keine weitere Lehrperson"
-        : `Nur ${count} Laboringenieure, keine weitere Lehrperson`;
+    const message = (count: number) => t("conflictsPopUp.labEngineers", { count });
 
     const active = conflictStore.courseLecturerViolations.map(v => {
       const course = courseStore.courseMap.get(v.courseId);

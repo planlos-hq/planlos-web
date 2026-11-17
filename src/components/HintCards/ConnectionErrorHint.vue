@@ -1,16 +1,19 @@
 <template>
-  <hint-card title="Keine Verbindung zum Server" alert>
+  <hint-card :title="t('hintCards.connectionErrorHint.title')" alert>
     <p class="m-0">
-      Der Server ist gerade nicht erreichbar. Bitte später erneut versuchen oder an den
-      Administrator wenden.
+      {{ t("hintCards.connectionErrorHint.serverNotReachable") }}
     </p>
     <p v-if="connectionError" class="error-code mt-2 mb-0">
-      Fehlercode: <code>{{ errorCodeLabel }}</code>
+      <i18n-t keypath="hintCards.connectionErrorHint.connectionError">
+        <template #code>
+          <code>{{ errorCodeLabel }}</code>
+        </template>
+      </i18n-t>
     </p>
     <template #actions>
       <b-button variant="primary" size="lg" @click="reload">
         <rotate-ccw :size="24" aria-hidden="true" />
-        Erneut versuchen
+        {{ t("common.retry") }}
       </b-button>
     </template>
   </hint-card>
@@ -23,6 +26,9 @@
   import { RotateCcw } from "lucide-vue-next";
   import { useConnectionStore } from "@/stores/connectionStore";
   import HintCard from "./HintCard.vue";
+  import { useI18n } from "vue-i18n";
+
+  const { t } = useI18n();
 
   /**
    * Hinweis auf allen Tabs, wenn der Server nicht erreichbar ist.

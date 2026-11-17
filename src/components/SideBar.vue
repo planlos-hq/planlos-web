@@ -12,8 +12,12 @@
   <div class="sidebar-container">
     <div class="top-actions mt-3 mb-3">
       <div class="action-group primary-actions">
-        <add-button @click="showCreateDialog = true" :size="28" title="Hinzufügen" />
-        <settings-button @click="showSettings = !showSettings" :size="28" title="Einstellungen" />
+        <add-button @click="showCreateDialog = true" :size="28" :title="t('common.add')" />
+        <settings-button
+          @click="showSettings = !showSettings"
+          :size="28"
+          :title="t('common.settings')"
+        />
         <conflict-warning-button
           @click="showConflicts = true"
           :size="28"
@@ -21,9 +25,9 @@
             conflictStore.resourceConflictsList.length +
             conflictStore.courseLecturerViolations.length
           "
-          title="Konflikte anzeigen"
+          :title="t('sideBar.conflictsShow')"
         />
-        <share-button :size="28" @click="showShareDialog = true" title="Ansicht teilen" />
+        <share-button :size="28" @click="showShareDialog = true" :title="t('sideBar.shareView')" />
       </div>
       <div class="action-group">
         <undo-button
@@ -31,8 +35,8 @@
           :class="{ disabled: !undoStore.undoLabel }"
           :title="
             undoStore.undoLabel
-              ? `Rückgängig: ${undoStore.undoLabel} (Strg+Z)`
-              : 'Nichts rückgängig zu machen'
+              ? t('sideBar.undo', { label: undoStore.undoLabel })
+              : t('sideBar.undoNone')
           "
           @click="undoStore.undo()"
         />
@@ -41,8 +45,8 @@
           :class="{ disabled: !undoStore.redoLabel }"
           :title="
             undoStore.redoLabel
-              ? `Wiederholen: ${undoStore.redoLabel} (Strg+Umschalt+Z)`
-              : 'Nichts zu wiederholen'
+              ? t('sideBar.redo', { label: undoStore.redoLabel })
+              : t('sideBar.redoNone')
           "
           @click="undoStore.redo()"
         />
@@ -53,7 +57,7 @@
       <div class="temp-info">
         <info class="temp-icon" style="height: 1.125rem; width: 1.125rem" />
 
-        <span class="temp-text"> Temporäre Ansicht </span>
+        <span class="temp-text"> {{ t("sideBar.tempView") }} </span>
       </div>
 
       <div class="temp-actions">
@@ -64,7 +68,7 @@
           @click="viewStore.keepTemp()"
         >
           <save style="height: 1.125rem; width: 1.125rem" />
-          Übernehmen
+          {{ t("sideBar.tempApply") }}
         </b-button>
 
         <b-button
@@ -74,7 +78,7 @@
           @click="viewStore.discardTemp()"
         >
           <rotate-ccw style="height: 1.125rem; width: 1.125rem" />
-          Zurückspringen
+          {{ t("sideBar.tempDiscard") }}
         </b-button>
       </div>
     </div>
@@ -84,7 +88,7 @@
         @click="selectTab(Tab.COURSE)"
         :size="20"
         :class="{ selected: view.tab === Tab.COURSE }"
-        :title="'Veranstaltungen'"
+        :title="t('common.courses')"
       />
       <!-- Die Planung steht für sich, getrennt von den Ressourcen-Tabs -->
       <span class="tab-divider" aria-hidden="true" />
@@ -92,25 +96,25 @@
         @click="selectTab(Tab.LECTURER)"
         :size="20"
         :class="{ selected: view.tab === Tab.LECTURER }"
-        :title="'Lehrpersonen'"
+        :title="t('common.lecturers')"
       />
       <study-group-button
         @click="selectTab(Tab.STUDYGROUP)"
         :size="20"
         :class="{ selected: view.tab === Tab.STUDYGROUP }"
-        :title="'Semestergruppen'"
+        :title="t('common.studyGroups')"
       />
       <degree-programm-button
         @click="selectTab(Tab.DEGREEPROGRAM)"
         :size="20"
         :class="{ selected: view.tab === Tab.DEGREEPROGRAM }"
-        :title="'Studiengänge'"
+        :title="t('common.degreePrograms')"
       />
       <room-button
         @click="selectTab(Tab.ROOM)"
         :size="20"
         :class="{ selected: view.tab === Tab.ROOM }"
-        :title="'Räume'"
+        :title="t('common.rooms')"
       />
     </div>
 
@@ -175,7 +179,7 @@
             type="button"
             class="collapse-handle"
             @click="detailCollapsed = !detailCollapsed"
-            :title="detailCollapsed ? 'Aufklappen' : 'Einklappen'"
+            :title="detailCollapsed ? t('sideBar.expand') : t('sideBar.collapse')"
           >
             <chevron-up v-if="detailCollapsed" :size="20" />
             <chevron-down v-else :size="20" />
@@ -217,6 +221,7 @@
   import type { Course } from "@/models/Course";
   import { useCourseStore } from "@/stores/courseStore";
   import { computed, ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import ListWithSearch from "@/components/ListWithSearch.vue";
   import SettingsPage from "./Settings/SettingsPage.vue";
   import { useSettingsDialog } from "@/composables/useSettingsDialog";
@@ -274,6 +279,7 @@
 
   export type ListItem = Course | Lecturer | Room | DegreeProgram | StudyGroup;
 
+  const { t } = useI18n();
   const deleteDialog = ref(false);
   const detailCollapsed = ref(false);
 
@@ -307,17 +313,17 @@
   const title = computed((): string => {
     switch (view.value.tab) {
       case Tab.LECTURER:
-        return "Lehrpersonen";
+        return t("common.lecturers");
       case Tab.STUDYGROUP:
-        return "Semestergruppen";
+        return t("common.studyGroups");
       case Tab.DEGREEPROGRAM:
-        return "Studiengänge";
+        return t("common.degreePrograms");
       case Tab.ROOM:
-        return "Räume";
+        return t("common.rooms");
       case Tab.COURSE:
-        return "Veranstaltungen";
+        return t("common.courses");
       default:
-        return "Veranstaltungen";
+        return t("common.courses");
     }
   });
 
@@ -331,17 +337,23 @@
     switch (view.value.tab) {
       case Tab.COURSE:
         return [
-          { label: "Name", comparator: sortBy<ListItem>(c => (isCourse(c) ? c.name : "")) },
-          { label: "Nummer", comparator: sortBy<ListItem>(c => (isCourse(c) ? c.number : "")) },
           {
-            label: "Abkürzung",
+            label: t("common.name"),
+            comparator: sortBy<ListItem>(c => (isCourse(c) ? c.name : "")),
+          },
+          {
+            label: t("common.number"),
+            comparator: sortBy<ListItem>(c => (isCourse(c) ? c.number : "")),
+          },
+          {
+            label: t("common.abbreviation"),
             comparator: sortBy<ListItem>(c => (isCourse(c) ? c.abbreviation : "")),
           },
         ];
       case Tab.LECTURER:
         return [
           {
-            label: "Name",
+            label: t("common.name"),
             comparator: (a, b) => {
               if (!isLecturer(a) || !isLecturer(b)) return 0;
               const last = a.lastName.localeCompare(b.lastName);
@@ -352,7 +364,7 @@
       case Tab.STUDYGROUP:
         return [
           {
-            label: "Name",
+            label: t("common.name"),
             comparator: sortBy<ListItem>(g =>
               isStudyGroup(g)
                 ? `${g.degreeProgram.abbreviation}${g.semesterYear % 100}_${g.semesterSeason
@@ -365,18 +377,18 @@
       case Tab.DEGREEPROGRAM:
         return [
           {
-            label: "Name",
+            label: t("common.name"),
             comparator: sortBy<ListItem>(d => (isDegreeProgram(d) ? d.name : "")),
           },
         ];
       case Tab.ROOM:
         return [
           {
-            label: "Nummer",
+            label: t("common.number"),
             comparator: sortBy<ListItem>(r => (isRoom(r) ? r.number : "")),
           },
           {
-            label: "Name",
+            label: t("common.name"),
             comparator: sortBy<ListItem>(r => (isRoom(r) ? r.name : "")),
           },
         ];

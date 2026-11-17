@@ -20,8 +20,9 @@
           :tab="view.tab"
         />
         <vue-cal
-          :key="view.tab"
+          :key="`${view.tab}-${vueCalLocale}`"
           v-bind="timetableConfig"
+          :locale="vueCalLocale"
           :schedules="calendarSchedules"
           :events="vueCalEventStore.calendarEvents"
           :hide-weekdays="viewStore.hiddenWeekdays"
@@ -61,6 +62,7 @@
   import "vue-cal/style";
   import { specialHours, timetableConfig } from "@/timetableConfig";
   import { computed, onUnmounted, ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import { useStudyGroupStore } from "@/stores/studyGroupStore";
   import PlanningEvent from "@/components/PlanningEvent.vue";
   import { useVueCalEventStore } from "@/stores/vueCalEventStore";
@@ -86,6 +88,9 @@
   import LoadingHint from "@/components/HintCards/LoadingHint.vue";
   import { useConnectionStore } from "@/stores/connectionStore";
 
+  const { locale } = useI18n();
+  /** vue-cal kennt kein en, deswegen auf en-us mappen */
+  const vueCalLocale = computed(() => (locale.value === "en" ? "en-us" : locale.value));
   const vueCalEventStore = useVueCalEventStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();

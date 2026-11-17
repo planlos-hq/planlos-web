@@ -5,7 +5,7 @@
         class="flex-grow-1"
         v-model="searchText"
         type="search"
-        :placeholder="`Suche...`"
+        :placeholder="t('common.searchPlaceholder')"
       />
 
       <template #append>
@@ -20,8 +20,10 @@
 <script setup lang="ts">
   import { Search } from "lucide-vue-next";
   import { ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BButton, BInputGroup, BFormInput } from "bootstrap-vue-next";
 
+  const { t } = useI18n();
   const emit = defineEmits(["new-search"]);
 
   const searchText = ref("");

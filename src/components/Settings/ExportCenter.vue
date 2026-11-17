@@ -1,7 +1,7 @@
 <template>
   <div class="export-center">
-    <template v-for="group in groups" :key="group.label">
-      <p class="cap">{{ group.label }}</p>
+    <template v-for="group in groups" :key="group.key">
+      <p class="cap">{{ t(`settings.export.groups.${group.key}`) }}</p>
       <div
         v-for="e in group.entries"
         :key="e.key"
@@ -18,20 +18,20 @@
         >
           <span class="icon"><component :is="e.icon" :size="20" aria-hidden="true" /></span>
           <span class="text">
-            <span class="title">{{ e.label }}</span>
-            <span class="desc">{{ e.description }}</span>
+            <span class="title">{{ t(e.labelKey) }}</span>
+            <span class="desc">{{ t(e.descriptionKey) }}</span>
           </span>
           <chevron-down class="chev" :size="18" aria-hidden="true" />
         </button>
 
         <div v-if="openKey === e.key" :id="`export-${e.key}`" class="entry-body">
           <div v-for="o in e.options" :key="o.name" class="option">
-            <label :for="`${e.key}-${o.name}`">{{ o.label }}</label>
+            <label :for="`${e.key}-${o.name}`">{{ t(o.labelKey) }}</label>
             <b-form-select
               v-if="o.choices.length > 3"
               :id="`${e.key}-${o.name}`"
               :model-value="valueOf(e, o.name)"
-              :options="o.choices.map(c => ({ value: c.value, text: c.label }))"
+              :options="o.choices.map(c => ({ value: c.value, text: t(c.labelKey) }))"
               size="sm"
               @update:model-value="v => setValue(e, o.name, v)"
             />
@@ -40,7 +40,7 @@
               :id="`${e.key}-${o.name}`"
               class="segmented"
               role="radiogroup"
-              :aria-label="o.label"
+              :aria-label="t(o.labelKey)"
             >
               <button
                 v-for="c in o.choices"
@@ -51,7 +51,7 @@
                 :class="{ active: valueOf(e, o.name) === c.value }"
                 @click="setValue(e, o.name, c.value)"
               >
-                {{ c.label }}
+                {{ t(c.labelKey) }}
               </button>
             </div>
           </div>
@@ -65,7 +65,7 @@
           >
             <b-spinner v-if="busy === e.key" small class="me-1" />
             <download v-else :size="16" class="me-1" />
-            Herunterladen
+            {{ t("common.download") }}
           </b-button>
           <b-alert
             v-if="error?.key === e.key"
@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
   import { reactive, ref, watch, type Component } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BAlert, BButton, BFormSelect, BSpinner } from "bootstrap-vue-next";
   import { ChevronDown, Download, FileDown, Sheet } from "lucide-vue-next";
   import { usePdfExport } from "@/composables/usePdfExport";
@@ -102,8 +103,8 @@
   /** Eine feste Auswahl, bis 3 Werte als Umschalter, sonst als Liste */
   type ExportOption = {
     name: string;
-    label: string;
-    choices: { value: string; label: string }[];
+    labelKey: string;
+    choices: { value: string; labelKey: string }[];
     default: string;
   };
 
@@ -111,9 +112,9 @@
 
   type Entry = {
     key: string;
-    group: "Diese Ansicht" | "Daten";
-    label: string;
-    description: string;
+    group: "view" | "data";
+    labelKey: string;
+    descriptionKey: string;
     icon: Component;
     options: ExportOption[];
     /** Lädt herunter; gibt eine Fehlermeldung zurück oder undefined */
@@ -121,23 +122,23 @@
   };
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
+  const { t } = useI18n();
   const { exportToPdf, exportError } = usePdfExport();
 
   const tableResources = [
-    { value: "lecturer", label: "Lehrpersonen" },
-    { value: "room", label: "Räume" },
-    { value: "degree_program", label: "Studiengänge" },
-    { value: "study_group", label: "Semestergruppen" },
-    { value: "course", label: "Veranstaltungen" },
+    { value: "lecturer", labelKey: "settings.export.resources.lecturer" },
+    { value: "room", labelKey: "settings.export.resources.room" },
+    { value: "degree_program", labelKey: "settings.export.resources.degreeProgram" },
+    { value: "study_group", labelKey: "settings.export.resources.studyGroup" },
+    { value: "course", labelKey: "settings.export.resources.course" },
   ];
 
   const entries: Entry[] = [
     {
       key: "pdf",
-      group: "Diese Ansicht",
-      label: "Stundenplan als PDF",
-      description:
-        "Die Planungsansicht, wie sie gerade angezeigt wird, zum Drucken oder Aushängen.",
+      group: "view",
+      labelKey: "settings.export.entries.pdf.label",
+      descriptionKey: "settings.export.entries.pdf.description",
       icon: FileDown,
       options: [],
       run: async () => {
@@ -147,19 +148,23 @@
     },
     {
       key: "tables",
-      group: "Daten",
-      label: "Tabellen",
-      description:
-        "Ressourcen zum Bearbeiten in Excel oder für andere Systeme, auch wieder importierbar.",
+      group: "data",
+      labelKey: "settings.export.entries.tables.label",
+      descriptionKey: "settings.export.entries.tables.description",
       icon: Sheet,
       options: [
-        { name: "resource", label: "Daten", choices: tableResources, default: "lecturer" },
+        {
+          name: "resource",
+          labelKey: "settings.export.options.resource",
+          choices: tableResources,
+          default: "lecturer",
+        },
         {
           name: "format",
-          label: "Format",
+          labelKey: "settings.export.options.format",
           choices: [
-            { value: "xlsx", label: "Excel (.xlsx)" },
-            { value: "csv", label: "CSV" },
+            { value: "xlsx", labelKey: "settings.export.formats.xlsx" },
+            { value: "csv", labelKey: "settings.export.formats.csv" },
           ],
           default: "xlsx",
         },
@@ -169,11 +174,12 @@
         const format = values.format ?? "xlsx";
         const response = await fetch(`${apiBaseUrl}/export/${format}/${resource}`);
         if (!response.ok) {
-          return `Der Server antwortet mit Fehler ${response.status}.`;
+          return t("settings.export.serverError", { status: response.status });
         }
         // Der Server nennt jede Datei export.<format>, besser nach der Ressource benennen
         const name = responseFilename(response);
-        const label = tableResources.find(r => r.value === resource)?.label ?? resource;
+        const resourceKey = tableResources.find(r => r.value === resource)?.labelKey;
+        const label = resourceKey !== undefined ? t(resourceKey) : resource;
         saveBlob(
           await response.blob(),
           name !== undefined && name !== `export.${format}` ? name : `${label}.${format}`
@@ -183,9 +189,9 @@
     },
   ];
 
-  const groups = (["Diese Ansicht", "Daten"] as const).map(label => ({
-    label,
-    entries: entries.filter(e => e.group === label),
+  const groups = (["view", "data"] as const).map(key => ({
+    key,
+    entries: entries.filter(e => e.group === key),
   }));
 
   const openKey = ref<string | null>(null);
@@ -227,7 +233,7 @@
         error.value = { key: e.key, text: message };
       }
     } catch {
-      error.value = { key: e.key, text: "Netzwerkfehler: Server nicht erreichbar." };
+      error.value = { key: e.key, text: t("settings.export.networkError") };
     } finally {
       busy.value = null;
     }

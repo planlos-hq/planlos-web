@@ -32,10 +32,10 @@
         <p class="m-0 p-0 small-text">{{ course.color.name }}</p>
       </div>
 
-      <p class="m-0 mt-1 p-0 small-text" v-if="hasConflict">Konflikte:</p>
+      <p class="m-0 mt-1 p-0 small-text" v-if="hasConflict">{{ t("planningEvent.conflicts") }}</p>
       <div v-if="event.labEngineerOnly" class="mt-1 mb-1 super-small-text">
         <flask-conical :size="20" />
-        Nur Laboringenieur, keine weitere Lehrperson
+        {{ t("planningEvent.labEngineerOnly") }}
       </div>
       <div
         v-for="(conflict, index) in event.conflicts"
@@ -64,6 +64,7 @@
   import { useCourseStore } from "@/stores/courseStore";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
   import { computed, nextTick, ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import { Tab } from "@/enums/enums";
   import { useColor } from "@/composables/useColor";
   import { BPopover } from "bootstrap-vue-next";
@@ -79,6 +80,7 @@
   const conflictStore = useResourceConflictStore();
   const viewStore = useViewStore();
   const { calculateFontColor } = useColor();
+  const { t } = useI18n();
 
   const black = "#000000";
 

@@ -2,7 +2,7 @@
   <icon-button
     :size="size"
     class="icon-button"
-    :title="modelValue ? 'Alle Veranstaltungen' : 'Relevante Veranstaltungen'"
+    :title="modelValue ? t('common.allCourses') : t('common.relevantCourses')"
     @click="toggle"
   >
     <list-chevrons-up-down v-if="modelValue" :size="size" :stroke-width="1.5" class="icon" />
@@ -11,8 +11,11 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from "vue-i18n";
   import IconButton from "@/template/IconButton.vue";
   import { ListChevronsDownUp, ListChevronsUpDown } from "lucide-vue-next";
+
+  const { t } = useI18n();
 
   const props = defineProps<{
     /**Größe des Icons in px */

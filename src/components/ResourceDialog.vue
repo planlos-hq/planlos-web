@@ -17,31 +17,31 @@
         @click="selectResource(Tab.COURSE)"
         :size="20"
         :class="{ selected: selectedTab === Tab.COURSE }"
-        title="Veranstaltungen"
+        :title="t('common.courses')"
       />
       <lecturer-button
         @click="selectResource(Tab.LECTURER)"
         :size="20"
         :class="{ selected: selectedTab === Tab.LECTURER }"
-        title="Lehrpersonen"
+        :title="t('common.lecturers')"
       />
       <study-group-button
         @click="selectResource(Tab.STUDYGROUP)"
         :size="20"
         :class="{ selected: selectedTab === Tab.STUDYGROUP }"
-        title="Semestergruppen"
+        :title="t('common.studyGroups')"
       />
       <degree-programm-button
         @click="selectResource(Tab.DEGREEPROGRAM)"
         :size="20"
         :class="{ selected: selectedTab === Tab.DEGREEPROGRAM }"
-        title="Studiengänge"
+        :title="t('common.degreePrograms')"
       />
       <room-button
         @click="selectResource(Tab.ROOM)"
         :size="20"
         :class="{ selected: selectedTab === Tab.ROOM }"
-        title="Räume"
+        :title="t('common.rooms')"
       />
     </div>
 
@@ -75,20 +75,23 @@
 
     <b-modal
       v-model="showDuplicateDialog"
-      title="Kursnummer bereits vergeben"
+      :title="t('resourceDialog.duplicateTitle')"
       centered
-      ok-title="Trotzdem erstellen"
+      :ok-title="t('resourceDialog.duplicateCreateAnyway')"
       ok-variant="primary"
       @ok="confirmCreateAnyway"
       no-animation
     >
-      <p>
-        Es {{ duplicateCourses.length === 1 ? "existiert bereits" : "existieren bereits" }}
-        {{ duplicateCourses.length }}
-        {{ duplicateCourses.length === 1 ? "Kurs" : "Kurse" }} mit der Nummer
-        <strong>{{ duplicateCourses[0]?.number }}</strong
-        >:
-      </p>
+      <i18n-t
+        keypath="resourceDialog.duplicateExists"
+        tag="p"
+        :plural="duplicateCourses.length"
+        :named="{ count: duplicateCourses.length }"
+      >
+        <template #number>
+          <strong>{{ duplicateCourses[0]?.number }}</strong>
+        </template>
+      </i18n-t>
       <b-list-group class="mb-3">
         <b-list-group-item
           v-for="course in duplicateCourses"
@@ -98,12 +101,12 @@
           {{ course.abbreviation }} – {{ course.name }}
         </b-list-group-item>
       </b-list-group>
-      <p class="mb-0">Möchten Sie den Kurs trotzdem erstellen?</p>
+      <p class="mb-0">{{ t("resourceDialog.duplicateConfirm") }}</p>
     </b-modal>
 
     <template #footer>
       <b-button @click="triggerSubmit" variant="primary" v-if="selectedTab">
-        {{ mode === "create" ? "Speichern" : "Änderungen übernehmen" }}
+        {{ mode === "create" ? t("common.save") : t("resourceDialog.applyChanges") }}
       </b-button>
     </template>
 
@@ -123,6 +126,7 @@
     BListGroupItem,
   } from "bootstrap-vue-next";
   import { ref, computed, useTemplateRef, type ComputedRef, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import FormInput, { type FormInputType, type SelectOption } from "./FormInput.vue";
   import type { Lecturer } from "@/models/Lecturer";
   import { useRoomStore } from "@/stores/roomStore";
@@ -130,7 +134,7 @@
   import type { StudyGroup } from "@/models/StudyGroup";
   import { useStudyGroupStore } from "@/stores/studyGroupStore";
   import { useDegreeProgramStore } from "@/stores/degreeProgramStore";
-  import { LecturerKind, mapLecturerKindToString, SemesterSeason } from "@/enums/enums";
+  import { LecturerKind, lecturerKindKey, SemesterSeason } from "@/enums/enums";
   import type { DegreeProgram } from "@/models/DegreeProgram";
   import { useCourseStore } from "@/stores/courseStore";
   import type { Course } from "@/models/Course";
@@ -167,7 +171,8 @@
   };
 
   type ResourceConfig<T extends BaseResource> = {
-    title: string;
+    /** i18n-Key des Resourcennamens, z. B. "resourceDialog.lecturer" */
+    titleKey: string;
     selectedResource: () => T | null | undefined;
     create: (item: Omit<T, "id">) => unknown;
     update: (id: number, updates: Partial<Omit<T, "id">>) => void | Promise<void>;
@@ -192,6 +197,7 @@
     selectedTab: Tab;
   }>();
 
+  const { t } = useI18n();
   const selectedTab = ref<Tab>(props.selectedTab);
   const title = computed(() => createTitle());
   const submitButton = useTemplateRef("submitButton");
@@ -215,9 +221,9 @@
     }
   );
 
-  const resourceConfigs: ResourceConfigs = {
+  const resourceConfigs = computed<ResourceConfigs>(() => ({
     lecturer: {
-      title: "Lehrperson",
+      titleKey: "resourceDialog.lecturer",
       selectedResource: () => lecturerStore.selectedLecturer,
       create: item => lecturerStore.createLecturer(item),
       update: (id, updates) => lecturerStore.updateLecturer(id, updates),
@@ -225,27 +231,47 @@
       delete: id => lecturerStore.deleteLecturer(id),
       fields: ["firstName", "lastName", "abbreviation", "notes", "kind", "isRelevant", "extraData"],
       attributes: [
-        { key: "firstName", placeholder: "Vorname", type: "text", required: true },
-        { key: "lastName", placeholder: "Nachname", type: "text", required: true },
-        { key: "abbreviation", placeholder: "Abkürzung", type: "text", required: true },
-        { key: "notes", placeholder: "Notizen", type: "text-area", required: false },
+        {
+          key: "firstName",
+          placeholder: t("resourceDialog.firstName"),
+          type: "text",
+          required: true,
+        },
+        {
+          key: "lastName",
+          placeholder: t("resourceDialog.lastName"),
+          type: "text",
+          required: true,
+        },
+        {
+          key: "abbreviation",
+          placeholder: t("common.abbreviation"),
+          type: "text",
+          required: true,
+        },
+        { key: "notes", placeholder: t("common.notes"), type: "text-area", required: false },
         {
           key: "kind",
-          placeholder: "Typ",
+          placeholder: t("common.type"),
           type: "select",
           required: true,
           options: computed(() =>
             Object.values(LecturerKind).map(value => ({
               value: value,
-              text: mapLecturerKindToString(value),
+              text: t(lecturerKindKey[value]),
             }))
           ),
         },
-        { key: "isRelevant", placeholder: "zur Planung aktiv", type: "checkbox", required: false },
+        {
+          key: "isRelevant",
+          placeholder: t("resourceInfo.activeForPlanning"),
+          type: "checkbox",
+          required: false,
+        },
       ],
     },
     room: {
-      title: "Raum",
+      titleKey: "resourceDialog.room",
       selectedResource: () => roomStore.selectedRoom,
       create: item => roomStore.createRoom(item),
       update: (id, updates) => roomStore.updateRoom(id, updates),
@@ -253,13 +279,23 @@
       delete: id => roomStore.deleteRoom(id),
       fields: ["number", "name", "seats", "extraData"],
       attributes: [
-        { key: "number", placeholder: "Raumnummer", type: "text", required: true },
-        { key: "name", placeholder: "Raumbezeichnung", type: "text", required: false },
-        { key: "seats", placeholder: "Anzahl an Plätzen", type: "number", required: false },
+        {
+          key: "number",
+          placeholder: t("resourceDialog.roomNumber"),
+          type: "text",
+          required: true,
+        },
+        { key: "name", placeholder: t("resourceDialog.roomName"), type: "text", required: false },
+        {
+          key: "seats",
+          placeholder: t("resourceDialog.seatsCount"),
+          type: "number",
+          required: false,
+        },
       ],
     },
     studyGroup: {
-      title: "Semestergruppe",
+      titleKey: "resourceDialog.studyGroup",
       selectedResource: () => studyGroupStore.selectedStudyGroup,
       create: item => studyGroupStore.createStudyGroup(item),
       update: (id, updates) => studyGroupStore.updateStudyGroup(id, updates),
@@ -269,7 +305,7 @@
       attributes: [
         {
           key: "degreeProgram",
-          placeholder: "Studiengang",
+          placeholder: t("common.degreeProgram"),
           type: "select",
           required: true,
           options: computed(() =>
@@ -281,43 +317,46 @@
         },
         {
           key: "semesterYear",
-          placeholder: "Jahr",
+          placeholder: t("resourceInfo.year"),
           type: "number",
           required: true,
         },
         {
           key: "semesterSeason",
-          placeholder: "Semester",
+          placeholder: t("resourceInfo.semester"),
           type: "select",
           required: true,
           options: computed(() =>
             Object.values(SemesterSeason).map(value => ({
               value: value,
-              text: value === SemesterSeason.SUMMER ? "Sommer" : "Winter",
+              text:
+                value === SemesterSeason.SUMMER
+                  ? t("resourceInfo.summer")
+                  : t("resourceInfo.winter"),
             }))
           ),
         },
         {
           key: "studentCount",
-          placeholder: "Anzahl an Studierenden",
+          placeholder: t("resourceDialog.studentsCount"),
           type: "number",
           required: false,
         },
         {
           key: "headings",
-          placeholder: "Veranstaltungen zur Semestergruppe zuweisen",
+          placeholder: t("resourceDialog.assignCoursesToGroup"),
           type: "heading",
           required: false,
         },
         {
           key: "templates",
-          placeholder: "Vorlagen für Veranstaltungen",
+          placeholder: t("resourceDialog.templatesForCourses"),
           type: "select-with-edit",
           required: false,
           options: computed(() =>
-            templateStore.templateList.map(t => ({
-              value: t,
-              text: t.name,
+            templateStore.templateList.map(template => ({
+              value: template,
+              text: template.name,
             }))
           ),
           onEdit: () => {
@@ -328,7 +367,7 @@
         },
         {
           key: "courses",
-          placeholder: "Veranstaltungen zuweisen",
+          placeholder: t("resourceDialog.assignCourses"),
           type: "search-select",
           required: false,
           options: computed(() => courseStore.courseList),
@@ -338,7 +377,7 @@
       ],
     },
     degreeProgram: {
-      title: "Studiengang",
+      titleKey: "common.degreeProgram",
       selectedResource: () => degreeProgramStore.selectedDegreeProgram,
       create: item => degreeProgramStore.createDegreeProgram(item),
       update: (id, updates) => degreeProgramStore.updateDegreeProgram(id, updates),
@@ -346,12 +385,22 @@
       delete: id => degreeProgramStore.deleteDegreeProgram(id),
       fields: ["name", "abbreviation", "extraData"],
       attributes: [
-        { key: "name", placeholder: "Studiengangsname", type: "text", required: true },
-        { key: "abbreviation", placeholder: "Studiengangsabkürzung", type: "text", required: true },
+        {
+          key: "name",
+          placeholder: t("resourceDialog.degreeProgramName"),
+          type: "text",
+          required: true,
+        },
+        {
+          key: "abbreviation",
+          placeholder: t("resourceDialog.degreeProgramAbbreviation"),
+          type: "text",
+          required: true,
+        },
       ],
     },
     course: {
-      title: "Kurs",
+      titleKey: "resourceDialog.course",
       selectedResource: () => courseStore.selectedCourse,
       create: item => courseStore.createCourse(item),
       update: (id, updates) => courseStore.updateCourse(id, updates),
@@ -370,19 +419,19 @@
       attributes: [
         {
           key: "number",
-          placeholder: "Nummer",
+          placeholder: t("common.number"),
           type: "text",
           required: true,
         },
         {
           key: "name",
-          placeholder: "Name",
+          placeholder: t("common.name"),
           type: "text",
           required: true,
         },
         {
           key: "abbreviation",
-          placeholder: "Abkürzung",
+          placeholder: t("common.abbreviation"),
           type: "text",
           required: true,
         },
@@ -400,7 +449,7 @@
         },
         {
           key: "lecturers",
-          placeholder: "Lehrpersonen zuweisen",
+          placeholder: t("common.assignLecturers"),
           type: "search-select",
           required: false,
           options: computed(() => lecturerStore.relevantLecturers),
@@ -409,7 +458,7 @@
         },
         {
           key: "studyGroups",
-          placeholder: "Semestergruppen zuweisen",
+          placeholder: t("resourceDialog.assignStudyGroups"),
           type: "search-select",
           required: false,
           options: computed(() => studyGroupStore.studyGroupList),
@@ -419,12 +468,12 @@
         },
       ],
     },
-  };
+  }));
   const activeConfig = computed(() => {
-    return resourceConfigs[selectedTab.value as keyof typeof resourceConfigs];
+    return resourceConfigs.value[selectedTab.value as keyof ResourceConfigs];
   });
 
-  const { formData, update, create, cancel, isItemSelected, toggleItem } =
+  const { formData, update, create, isItemSelected, toggleItem } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useResourceForm<any>(
       // Im Create-Modus startet das Formular leer, die Auswahl in der Ansicht bleibt unberührt
@@ -610,12 +659,11 @@
    * Ändert den Titel des Modals.
    */
   function createTitle() {
-    switch (props.mode) {
-      case "create":
-        return activeConfig.value.title + " erstellen";
-      case "edit":
-        return activeConfig.value.title + " anpassen";
+    const resource = t(activeConfig.value.titleKey);
+    if (props.mode === "create") {
+      return t("resourceDialog.createTitle", { resource });
     }
+    return t("resourceDialog.editTitle", { resource });
   }
 
   /**

@@ -28,6 +28,7 @@
   import type { Room } from "@/models/Room";
   import type { StudyGroup } from "@/models/StudyGroup";
   import { computed } from "vue";
+  import { useI18n } from "vue-i18n";
   import {
     isCourse,
     isDegreeProgram,
@@ -35,8 +36,9 @@
     isRoom,
     isStudyGroup,
   } from "@/models/CheckFunctions";
-  import { mapLecturerKindToString, SemesterSeason } from "@/enums/enums";
+  import { lecturerKindKey, SemesterSeason } from "@/enums/enums";
 
+  const { t } = useI18n();
   const props = defineProps<{
     /** Resource, von der die Informationen angeziegt werden sollen. */
     resource: Course | StudyGroup | Room | Lecturer | DegreeProgram | undefined;
@@ -48,14 +50,17 @@
     if (props.resource) {
       if (isCourse(props.resource)) {
         return [
-          ["Nummer", props.resource.number],
-          ["Name", props.resource.name],
-          ["Abkürzung", props.resource.abbreviation],
+          [t("common.number"), props.resource.number],
+          [t("common.name"), props.resource.name],
+          [t("common.abbreviation"), props.resource.abbreviation],
           ["SWS", props.resource.sws],
           ["Credits", props.resource.creditPoints],
-          ["Lehrpersonen", props.resource.lecturers.map(l => l.firstName + " " + l.lastName)],
           [
-            "Semestergruppen",
+            t("common.lecturers"),
+            props.resource.lecturers.map(l => l.firstName + " " + l.lastName),
+          ],
+          [
+            t("common.studyGroups"),
             props.resource.studyGroups.map(
               s =>
                 `${s.degreeProgram.abbreviation}${s.semesterYear % 100}_${s.semesterSeason.charAt(0).toUpperCase()}`
@@ -65,35 +70,37 @@
       }
       if (isLecturer(props.resource)) {
         return [
-          ["Name", props.resource.firstName + " " + props.resource.lastName],
-          ["Abkürzung", props.resource.abbreviation],
-          ["zur Planung aktiv", mapBooleanToString(props.resource.isRelevant)],
-          ["Typ", mapLecturerKindToString(props.resource.kind)],
-          ["Notizen", props.resource.notes],
+          [t("common.name"), props.resource.firstName + " " + props.resource.lastName],
+          [t("common.abbreviation"), props.resource.abbreviation],
+          [t("resourceInfo.activeForPlanning"), mapBooleanToString(props.resource.isRelevant)],
+          [t("common.type"), t(lecturerKindKey[props.resource.kind])],
+          [t("common.notes"), props.resource.notes],
         ];
       }
       if (isStudyGroup(props.resource)) {
         return [
-          ["Studiengang", props.resource.degreeProgram.abbreviation],
-          ["Jahr", props.resource.semesterYear],
+          [t("common.degreeProgram"), props.resource.degreeProgram.abbreviation],
+          [t("resourceInfo.year"), props.resource.semesterYear],
           [
-            "Semester",
-            props.resource.semesterSeason === SemesterSeason.SUMMER ? "Sommer" : "Winter",
+            t("resourceInfo.semester"),
+            props.resource.semesterSeason === SemesterSeason.SUMMER
+              ? t("resourceInfo.summer")
+              : t("resourceInfo.winter"),
           ],
-          ["Studenten", props.resource.studentCount],
+          [t("resourceInfo.students"), props.resource.studentCount],
         ];
       }
       if (isDegreeProgram(props.resource)) {
         return [
-          ["Name", props.resource.name],
-          ["Abkürzung", props.resource.abbreviation],
+          [t("common.name"), props.resource.name],
+          [t("common.abbreviation"), props.resource.abbreviation],
         ];
       }
       if (isRoom(props.resource)) {
         return [
-          ["Nummer", props.resource.number],
-          ["Name", props.resource.name],
-          ["Sitzplätze", props.resource.seats],
+          [t("common.number"), props.resource.number],
+          [t("common.name"), props.resource.name],
+          [t("resourceInfo.seats"), props.resource.seats],
         ];
       }
 
@@ -104,7 +111,7 @@
   });
 
   function mapBooleanToString(bool: boolean) {
-    return bool ? "Ja" : "Nein";
+    return bool ? t("common.yes") : t("common.no");
   }
 </script>
 

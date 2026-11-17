@@ -1,10 +1,10 @@
 <template>
   <b-modal
-    :title="title"
+    :title="title ?? t('deleteDialog.title')"
     centered
-    :ok-title="okTitle"
+    :ok-title="okTitle ?? t('common.delete')"
     ok-variant="danger"
-    :ok-disabled="confirmText !== 'Bestätigen'"
+    :ok-disabled="!isConfirmed"
     @ok="confirm"
     ok-only
     lazy
@@ -15,19 +15,20 @@
     <b-list-group-item class="d-flex flex-column align-items-center justify-content-center">
       <slot></slot>
     </b-list-group-item>
-    <p class="mt-3 mb-1">
-      Tippen Sie
-      <button
-        type="button"
-        class="confirm-word"
-        title="Klicken, um „Bestätigen“ einzutragen"
-        @click="fillConfirmText"
-      >
-        <strong>{{ confirmWord }}</strong>
-        <copy :size="14" class="ms-1" />
-      </button>
-      ein, um {{ action }}:
-    </p>
+    <i18n-t keypath="deleteDialog.prompt" tag="p" class="mt-3 mb-1">
+      <template #word>
+        <button
+          type="button"
+          class="confirm-word"
+          :title="t('deleteDialog.fillTitle', { word: confirmWord })"
+          @click="fillConfirmText"
+        >
+          <strong>{{ confirmWord }}</strong>
+          <copy :size="14" class="ms-1" />
+        </button>
+      </template>
+      <template #action>{{ action ?? t("deleteDialog.defaultAction") }}</template>
+    </i18n-t>
     <b-form-input
       v-model="confirmText"
       :placeholder="confirmWord"
@@ -38,26 +39,23 @@
 
 <script setup lang="ts">
   import { computed, ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import { BModal, BListGroupItem, BFormInput } from "bootstrap-vue-next";
   import { Copy } from "lucide-vue-next";
 
-  const confirmWord = "Bestätigen";
+  const { t } = useI18n();
 
-  withDefaults(
-    defineProps<{
-      /** Überschrift des Dialogs */
-      title?: string;
-      /** Beschriftung des Bestätigen-Knopfs */
-      okTitle?: string;
-      /** Was die Bestätigung auslöst, z. B. "den Eintrag zu löschen" */
-      action?: string;
-    }>(),
-    {
-      title: "Folgenden Eintrag wirklich löschen?",
-      okTitle: "Löschen",
-      action: "den Eintrag zu löschen",
-    }
-  );
+  /** Wort, das zur Bestätigung eingetippt werden muss */
+  const confirmWord = computed(() => t("deleteDialog.confirmWord"));
+
+  defineProps<{
+    /** Überschrift des Dialogs */
+    title?: string;
+    /** Beschriftung des Bestätigen-Knopfs */
+    okTitle?: string;
+    /** Was die Bestätigung auslöst, z. B. "den Eintrag zu löschen" */
+    action?: string;
+  }>();
 
   const emit = defineEmits<{
     /** Eintrag darf endgültig gelöscht werden */
@@ -65,10 +63,10 @@
   }>();
 
   const confirmText = ref("");
-  const isConfirmed = computed(() => confirmText.value === confirmWord);
+  const isConfirmed = computed(() => confirmText.value === confirmWord.value);
 
   function fillConfirmText() {
-    confirmText.value = confirmWord;
+    confirmText.value = confirmWord.value;
   }
 
   /**

@@ -2,11 +2,13 @@
   <b-modal :title="event.title" centered no-footer @hide="onHide(timeSlot)" size="md" no-animation>
     <b-list-group>
       <b-list-group-item class="d-flex align-items-center justify-content-center">
-        <b-button variant="outline-danger" @click="removeEvent">aus Kalender entfernen</b-button>
+        <b-button variant="outline-danger" @click="removeEvent">{{
+          t("eventOverview.removeFromCalendar")
+        }}</b-button>
       </b-list-group-item>
       <b-list-group-item>
         <h5 class="d-flex flex-row justify-content-between align-items-center">
-          Veranstaltung einfärben
+          {{ t("eventOverview.colorEvent") }}
           <reset-button :size="16" @click="resetColor" />
         </h5>
 
@@ -43,11 +45,11 @@
         </b-list-group-item>
       </b-list-group-item>
       <b-list-group-item class="d-flex flex-row justify-content-between">
-        <p class="m-0">Veranstaltungsname:</p>
+        <p class="m-0">{{ t("eventOverview.eventName") }}</p>
         <p class="m-0">{{ event.title }}</p>
       </b-list-group-item>
       <b-list-group-item class="d-flex flex-row justify-content-between">
-        <p class="m-0">Kürzel:</p>
+        <p class="m-0">{{ t("eventOverview.abbreviation") }}</p>
         <p class="m-0">{{ course?.abbreviation || "---" }}</p>
       </b-list-group-item>
 
@@ -55,7 +57,7 @@
         <!-- Gleiche Auswahl wie "Veranstaltungen zuweisen" im Ressourcen-Dialog -->
         <form-input
           type="search-select"
-          placeholder="Räume zuweisen"
+          :placeholder="t('eventOverview.assignRooms')"
           :disabled="false"
           :required="false"
           :options="roomStore.roomList"
@@ -70,7 +72,7 @@
       <b-list-group-item>
         <form-input
           type="search-select"
-          placeholder="Lehrpersonen zuweisen"
+          :placeholder="t('common.assignLecturers')"
           :disabled="false"
           :required="false"
           :options="lecturerStore.relevantLecturers"
@@ -90,10 +92,10 @@
         <p class="m-0">{{ course?.sws || "---" }}</p>
       </b-list-group-item>
       <b-list-group-item class="d-flex flex-row justify-content-evenly gap-3 align-items-center">
-        <p class="m-0 me-3 align-self-start">Zeit:</p>
-        <p class="m-0">von:</p>
+        <p class="m-0 me-3 align-self-start">{{ t("eventOverview.time") }}</p>
+        <p class="m-0">{{ t("eventOverview.timeFrom") }}</p>
         <b-input type="time" v-model="startTime" />
-        <p class="m-0">bis:</p>
+        <p class="m-0">{{ t("eventOverview.timeTo") }}</p>
         <b-input type="time" v-model="endTime" />
       </b-list-group-item>
     </b-list-group>
@@ -113,6 +115,7 @@
   import type { Color } from "@/models/Color";
   import type { VueCalEvent } from "@/models/VueCalEvent";
   import { computed, ref, watch } from "vue";
+  import { useI18n } from "vue-i18n";
   import { useCourseStore } from "@/stores/courseStore";
   import type { TimeSlot } from "@/models/TimeSlot";
   import { useTimeSlotStore } from "@/stores/timeSlotStore";
@@ -128,6 +131,7 @@
   import { assignLecturerToCourseApi, removeLecturerFromCourseApi } from "@/api/course";
   import { timetableConfig } from "@/timetableConfig.ts";
 
+  const { t } = useI18n();
   const colorStore = useColorStore();
   const courseStore = useCourseStore();
   const timeSlotStore = useTimeSlotStore();

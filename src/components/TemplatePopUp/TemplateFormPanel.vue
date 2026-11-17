@@ -1,14 +1,16 @@
 <template>
   <b-form class="template-form" @submit.prevent="emit('save')">
     <h4 class="form-title">
-      {{ mode === "create" ? "Neue Vorlage erstellen" : "Vorlage bearbeiten" }}
+      {{
+        mode === "create" ? t("templatePopUp.form.createTitle") : t("templatePopUp.form.editTitle")
+      }}
     </h4>
 
-    <b-form-floating-label label="Name" label-for="template-name">
+    <b-form-floating-label :label="t('common.name')" label-for="template-name">
       <b-form-input
         id="template-name"
         ref="nameInput"
-        placeholder="Name"
+        :placeholder="t('common.name')"
         required
         autocomplete="off"
         :model-value="name"
@@ -37,14 +39,16 @@
 
       <div class="picker-column">
         <div class="selected-head">
-          <h5 class="selected-title">Ausgewählt ({{ courseIds.length }})</h5>
+          <h5 class="selected-title">
+            {{ t("templatePopUp.form.selected", { count: courseIds.length }) }}
+          </h5>
           <reset-button
             :size="24"
             :class="{ locked: isResetLocked, 'opacity-50': courseIds.length === 0 }"
             role="button"
             :tabindex="isResetLocked ? -1 : 0"
-            title="Auswahl zurücksetzen"
-            aria-label="Auswahl zurücksetzen"
+            :title="t('common.resetSelection')"
+            :aria-label="t('common.resetSelection')"
             :aria-disabled="isResetLocked"
             @click="resetSelection"
             @keydown.enter.prevent="resetSelection"
@@ -59,7 +63,7 @@
           }"
         >
           <p v-if="selectedCourses.length === 0" class="m-0 text-body-secondary">
-            Noch nichts ausgewählt.
+            {{ t("templatePopUp.form.nothingSelected") }}
           </p>
           <b-list-group v-else class="d-flex flex-column gap-1">
             <b-list-group-item
@@ -76,7 +80,7 @@
                 :size="24"
                 role="button"
                 :tabindex="disabled ? -1 : 0"
-                :aria-label="`${entry.label} entfernen`"
+                :aria-label="t('templatePopUp.form.remove', { label: entry.label })"
                 :aria-disabled="disabled"
                 @click="toggleCourse(entry.id)"
                 @keydown.enter.prevent="toggleCourse(entry.id)"
@@ -95,9 +99,9 @@
         variant="primary"
         :disabled="!canSave"
         :loading="isSaving"
-        loading-text="Wird gespeichert…"
+        :loading-text="t('templatePopUp.form.saving')"
       >
-        Speichern
+        {{ t("common.save") }}
       </b-button>
     </div>
   </b-form>
@@ -120,6 +124,7 @@
   import type { Course } from "@/models/Course";
   import type { SortOption } from "@/models/SortOptions";
   import type { TemplateId } from "@/composables/useTemplateOverlay";
+  import { useI18n } from "vue-i18n";
 
   /** Ein Eintrag in der rechten Liste */
   type SelectedCourseEntry = {
@@ -156,6 +161,7 @@
     save: [void];
   }>();
 
+  const { t } = useI18n();
   const courseStore = useCourseStore();
   const nameInput = useTemplateRef<{ $el: HTMLElement }>("nameInput");
 
@@ -170,11 +176,17 @@
   }
 
   /** Sortierung der linken Liste, wie in der Sidebar */
-  const sortOptions: SortOption<Course>[] = [
-    { label: "Name", comparator: (a, b) => a.name.localeCompare(b.name) },
-    { label: "Nummer", comparator: (a, b) => a.number.localeCompare(b.number) },
-    { label: "Abkürzung", comparator: (a, b) => a.abbreviation.localeCompare(b.abbreviation) },
-  ];
+  const sortOptions = computed<SortOption<Course>[]>(() => [
+    { label: t("common.name"), comparator: (a, b) => a.name.localeCompare(b.name) },
+    {
+      label: t("common.number"),
+      comparator: (a, b) => a.number.localeCompare(b.number),
+    },
+    {
+      label: t("common.abbreviation"),
+      comparator: (a, b) => a.abbreviation.localeCompare(b.abbreviation),
+    },
+  ]);
 
   /**
    * Ausgewählte Veranstaltungen bleiben in der linken Liste, werden dort aber hervorgehoben.
@@ -208,7 +220,7 @@
         label:
           course !== undefined
             ? `${course.number} ${course.name}`
-            : `Veranstaltung ${id} – nicht mehr vorhanden`,
+            : t("templatePopUp.form.missingCourse", { id }),
         isMissing: course === undefined,
       };
     })

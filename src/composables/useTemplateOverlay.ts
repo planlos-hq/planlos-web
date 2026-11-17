@@ -1,5 +1,8 @@
 import { computed, ref } from "vue";
+import { i18n } from "@/i18n";
 import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate";
+
+const { t } = i18n.global;
 
 export type TemplateId = number;
 
@@ -114,11 +117,11 @@ export function useTemplateOverlay(options: TemplateOverlayOptions) {
     return {
       title:
         panel.value.mode === "create"
-          ? "Erstellen der Vorlage abbrechen?"
-          : "Änderungen verwerfen?",
-      lines: ["Nicht gespeicherte Eingaben gehen verloren."],
-      cancelLabel: "Weiter bearbeiten",
-      okLabel: "Verwerfen",
+          ? t("templatePopUp.overlay.cancelCreateTitle")
+          : t("templatePopUp.overlay.discardTitle"),
+      lines: [t("templatePopUp.overlay.discardLine")],
+      cancelLabel: t("templatePopUp.overlay.keepEditing"),
+      okLabel: t("templatePopUp.overlay.discard"),
     };
   });
 
@@ -135,12 +138,12 @@ export function useTemplateOverlay(options: TemplateOverlayOptions) {
     if (template === null) return [];
 
     const lines = [
-      `Die Vorlage „${template.name}“ wird endgültig gelöscht.`,
-      "Das wirkt sich auch auf bestehende Zuweisungen aus.",
+      t("templatePopUp.overlay.deleteLine", { name: template.name }),
+      t("templatePopUp.overlay.deleteEffect"),
     ];
 
     if (isEditing(template.id) && isDirty.value) {
-      lines.push("Nicht gespeicherte Änderungen gehen ebenfalls verloren.");
+      lines.push(t("templatePopUp.overlay.deleteDirty"));
     }
 
     return lines;
@@ -150,8 +153,8 @@ export function useTemplateOverlay(options: TemplateOverlayOptions) {
   const saveBlockReason = computed<string>(() => {
     const current = draft.value;
     if (current === null) return "";
-    if (current.name.trim() === "") return "Bitte einen Namen eingeben.";
-    if (panel.value.mode === "edit" && !isDirty.value) return "Keine Änderungen vorhanden.";
+    if (current.name.trim() === "") return t("templatePopUp.overlay.nameRequired");
+    if (panel.value.mode === "edit" && !isDirty.value) return t("templatePopUp.overlay.noChanges");
     return "";
   });
 

@@ -1,0 +1,32 @@
+export default {
+  title: "Vorlagen verwalten",
+  addQuestion: "Eine Vorlage hinzufügen?",
+  list: {
+    searchLabel: "Vorlagen suchen",
+    add: "Vorlage hinzufügen",
+    empty: "Noch keine Vorlagen vorhanden.",
+    noMatch: "Keine Vorlage gefunden.",
+    delete: "Vorlage {name} löschen",
+  },
+  form: {
+    createTitle: "Neue Vorlage erstellen",
+    editTitle: "Vorlage bearbeiten",
+    selected: "Ausgewählt ({count})",
+    nothingSelected: "Noch nichts ausgewählt.",
+    remove: "{label} entfernen",
+    saving: "Wird gespeichert…",
+    missingCourse: "Veranstaltung {id} – nicht mehr vorhanden",
+  },
+  overlay: {
+    cancelCreateTitle: "Erstellen der Vorlage abbrechen?",
+    discardTitle: "Änderungen verwerfen?",
+    discardLine: "Nicht gespeicherte Eingaben gehen verloren.",
+    keepEditing: "Weiter bearbeiten",
+    discard: "Verwerfen",
+    deleteLine: "Die Vorlage „{name}“ wird endgültig gelöscht.",
+    deleteEffect: "Das wirkt sich auch auf bestehende Zuweisungen aus.",
+    deleteDirty: "Nicht gespeicherte Änderungen gehen ebenfalls verloren.",
+    nameRequired: "Bitte einen Namen eingeben.",
+    noChanges: "Keine Änderungen vorhanden.",
+  },
+};

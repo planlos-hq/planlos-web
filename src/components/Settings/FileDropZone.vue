@@ -9,7 +9,7 @@
   >
     <template v-if="!modelValue">
       <upload :size="32" class="mb-2 text-muted" />
-      <span class="text-muted">Datei hierher ziehen oder klicken zum Auswählen</span>
+      <span class="text-muted">{{ t("settings.dropZone.prompt") }}</span>
     </template>
     <template v-else>
       <file-text :size="32" class="mb-2 text-success" />
@@ -28,6 +28,7 @@
 
 <script setup lang="ts">
   import { ref, useTemplateRef } from "vue";
+  import { useI18n } from "vue-i18n";
   import { FileText, Upload } from "lucide-vue-next";
 
   /** Feld zum Hineinziehen oder Auswählen einer Datei */
@@ -42,6 +43,7 @@
     "update:modelValue": [file: File];
   }>();
 
+  const { t } = useI18n();
   const fileInput = useTemplateRef<HTMLInputElement>("fileInput");
   const isDragging = ref(false);
 

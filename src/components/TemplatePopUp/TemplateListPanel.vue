@@ -4,16 +4,16 @@
       <b-form-input
         v-model="searchText"
         type="search"
-        placeholder="Suche…"
-        aria-label="Vorlagen suchen"
+        :placeholder="t('common.searchPlaceholder')"
+        :aria-label="t('templatePopUp.list.searchLabel')"
       />
 
       <template #append>
         <add-button
           class="add-button"
           :size="18"
-          title="Vorlage hinzufügen"
-          aria-label="Vorlage hinzufügen"
+          :title="t('templatePopUp.list.add')"
+          :aria-label="t('templatePopUp.list.add')"
           :aria-pressed="addActive"
           :disabled="disabled"
           @click="emit('add')"
@@ -23,10 +23,10 @@
 
     <div class="list-wrapper flex-fill overflow-y-auto">
       <p v-if="templates.length === 0" class="my-3 text-center text-body-secondary">
-        Noch keine Vorlagen vorhanden.
+        {{ t("templatePopUp.list.empty") }}
       </p>
       <p v-else-if="visibleTemplates.length === 0" class="my-3 text-center text-body-secondary">
-        Keine Vorlage gefunden.
+        {{ t("templatePopUp.list.noMatch") }}
       </p>
       <ul v-else class="list-unstyled m-0 d-flex flex-column gap-1">
         <li
@@ -51,8 +51,8 @@
             :size="18"
             role="button"
             :tabindex="disabled ? -1 : 0"
-            :title="`Vorlage ${template.name} löschen`"
-            :aria-label="`Vorlage ${template.name} löschen`"
+            :title="t('templatePopUp.list.delete', { name: template.name })"
+            :aria-label="t('templatePopUp.list.delete', { name: template.name })"
             :aria-disabled="disabled"
             @click="onDelete(template.id)"
             @keydown.enter.prevent="onDelete(template.id)"
@@ -71,6 +71,9 @@
   import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate";
   import AddButton from "../IconButtons/AddButton.vue";
   import DeleteButton from "../IconButtons/DeleteButton.vue";
+  import { useI18n } from "vue-i18n";
+
+  const { t } = useI18n();
 
   const props = defineProps<{
     templates: StudyGroupTemplate[];

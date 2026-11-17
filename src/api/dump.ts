@@ -1,3 +1,4 @@
+import { i18n } from "@/i18n";
 import { useNotification } from "@/composables/useNotification";
 import { useUndoStore } from "@/stores/undoStore";
 import { responseFilename, saveBlob } from "./download";
@@ -117,7 +118,7 @@ export async function importDumpApi(file: File) {
  */
 export async function truncateDatabaseApi() {
   const response = await fetch(
-    `${API_BASE_URL}/truncate?${new URLSearchParams({ comment: "Automatisch vor dem Leeren der Datenbank" })}`,
+    `${API_BASE_URL}/truncate?${new URLSearchParams({ comment: i18n.global.t("settings.backups.autoBeforeClear") })}`,
     { method: "POST" }
   );
   await check(response);

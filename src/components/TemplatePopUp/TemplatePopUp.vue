@@ -1,7 +1,7 @@
 <template>
   <b-modal
     v-model="show"
-    title="Vorlagen verwalten"
+    :title="t('templatePopUp.title')"
     size="xl"
     no-footer
     no-animation
@@ -45,14 +45,14 @@
           v-else
           class="d-flex flex-column flex-fill align-items-center justify-content-center gap-3"
         >
-          <h4 class="m-0">Eine Vorlage hinzufügen?</h4>
+          <h4 class="m-0">{{ t("templatePopUp.addQuestion") }}</h4>
           <b-button
             variant="primary"
             :disabled="overlay.isBusy.value"
             @click="overlay.requestCreate()"
           >
             <plus :size="20" />
-            Hinzufügen
+            {{ t("common.add") }}
           </b-button>
         </div>
       </div>
@@ -96,6 +96,9 @@
     type TemplateId,
   } from "@/composables/useTemplateOverlay";
   import type { Course } from "@/models/Course";
+  import { useI18n } from "vue-i18n";
+
+  const { t } = useI18n();
 
   const show = defineModel<boolean>({ default: false });
 

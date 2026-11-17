@@ -51,7 +51,6 @@ export const timetableConfig = {
   titleBar: false,
   viewsBar: false,
   hideWeekends: false,
-  locale: "de",
   viewDate: "2025-09-30",
   views: ["week"],
 

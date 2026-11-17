@@ -1,20 +1,27 @@
 <template>
   <div class="view-panel">
+    <section data-setting="language">
+      <div class="section-head">
+        <label for="language-select">{{ t("settings.view.language") }}</label>
+      </div>
+      <b-form-select id="language-select" v-model="locale" :options="languageOptions" size="sm" />
+    </section>
+
     <section data-setting="weekdays">
       <div class="section-head">
-        <span>Wochentage</span>
+        <span>{{ t("settings.view.weekdays") }}</span>
         <reset-button
           :size="24"
           class="p-1"
           role="button"
           tabindex="0"
-          title="Alle Wochentage anzeigen"
-          aria-label="Alle Wochentage anzeigen"
+          :title="t('settings.view.showAllWeekdays')"
+          :aria-label="t('settings.view.showAllWeekdays')"
           @click="resetWeekdays"
           @keydown.enter.space.prevent="resetWeekdays"
         />
       </div>
-      <div class="chips" role="group" aria-label="Sichtbare Wochentage">
+      <div class="chips" role="group" :aria-label="t('settings.view.visibleWeekdays')">
         <button
           v-for="day in weekdays"
           :key="day.value"
@@ -24,37 +31,46 @@
           :aria-pressed="selectedWeekdays.includes(day.value)"
           :aria-disabled="isLastWeekday(day.value)"
           :title="
-            isLastWeekday(day.value) ? `${day.text}: mindestens ein Tag bleibt sichtbar` : day.text
+            isLastWeekday(day.value)
+              ? t('settings.view.lastWeekdayHint', { day: t(`weekdays.${day.key}.long`) })
+              : t(`weekdays.${day.key}.long`)
           "
           @click="toggleWeekday(day.value)"
         >
-          {{ day.short }}
+          {{ t(`weekdays.${day.key}.short`) }}
         </button>
       </div>
     </section>
 
     <section data-setting="breaks">
-      <b-form-checkbox v-model="showBreaks" switch>Pausenzeiten anzeigen</b-form-checkbox>
+      <b-form-checkbox v-model="showBreaks" switch>{{
+        t("settings.view.showBreaks")
+      }}</b-form-checkbox>
     </section>
 
     <section class="groups" data-setting="groups">
       <div class="section-head">
         <span>
-          Semestergruppen
-          <span class="count">{{ selectedStudyGroupCount }} von {{ studyGroupList.length }}</span>
+          {{ t("settings.view.studyGroups") }}
+          <span class="count">{{
+            t("settings.view.selectedCount", {
+              selected: selectedStudyGroupCount,
+              total: studyGroupList.length,
+            })
+          }}</span>
         </span>
         <reset-button
           :size="24"
           class="p-1"
           role="button"
           tabindex="0"
-          title="Auswahl zurücksetzen"
-          aria-label="Auswahl zurücksetzen"
+          :title="t('common.resetSelection')"
+          :aria-label="t('common.resetSelection')"
           @click="resetSelectedStudyGroup"
           @keydown.enter.space.prevent="resetSelectedStudyGroup"
         />
       </div>
-      <div class="chips mb-2" role="group" aria-label="Nach Kohorte filtern">
+      <div class="chips mb-2" role="group" :aria-label="t('settings.view.filterBySemester')">
         <button
           v-for="s in semesters"
           :key="s.key"
@@ -73,7 +89,7 @@
           :aria-pressed="onlySelected"
           @click="onlySelected = !onlySelected"
         >
-          Nur ausgewählte
+          {{ t("settings.view.onlySelected") }}
         </button>
       </div>
       <!-- Search understands e.g. "inf 24", "informatik", "w25", "winter 2024" -->
@@ -98,7 +114,9 @@
 
 <script setup lang="ts">
   import { computed, ref } from "vue";
-  import { BFormCheckbox } from "bootstrap-vue-next";
+  import { useI18n } from "vue-i18n";
+  import { languageOptions } from "@/i18n";
+  import { BFormCheckbox, BFormSelect } from "bootstrap-vue-next";
   import type { StudyGroup } from "@/models/StudyGroup";
   import type { SortOption } from "@/models/SortOptions";
   import ListWithSearch from "../ListWithSearch.vue";
@@ -124,6 +142,8 @@
     getDisplayName,
   } = useViewFilters();
 
+  const { t, locale } = useI18n();
+
   const onlySelected = ref(false);
 
   const listItems = computed(() =>
@@ -138,20 +158,20 @@
   const byCohort = (a: StudyGroup, b: StudyGroup) =>
     b.semesterYear - a.semesterYear || b.semesterSeason.localeCompare(a.semesterSeason);
 
-  const sortOptions: SortOption<StudyGroup>[] = [
-    { label: "Name", comparator: byName },
-    { label: "Jahrgang", comparator: (a, b) => byCohort(a, b) || byName(a, b) },
+  const sortOptions = computed<SortOption<StudyGroup>[]>(() => [
+    { label: t("common.name"), comparator: byName },
+    { label: t("settings.view.sort.year"), comparator: (a, b) => byCohort(a, b) || byName(a, b) },
     {
-      label: "Studiengang",
+      label: t("settings.view.sort.degreeProgram"),
       comparator: (a, b) =>
         a.degreeProgram.name.localeCompare(b.degreeProgram.name) || byCohort(a, b),
     },
     {
-      label: "Ausgewählte zuerst",
+      label: t("settings.view.sort.selectedFirst"),
       comparator: (a, b) =>
         Number(isStudyGroupSelected(b)) - Number(isStudyGroupSelected(a)) || byName(a, b),
     },
-  ];
+  ]);
 </script>
 
 <style scoped>

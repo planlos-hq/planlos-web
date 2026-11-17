@@ -1,6 +1,6 @@
 <template>
   <b-modal
-    title="Planungsansicht teilen"
+    :title="t('shareDialog.title')"
     size="md"
     scrollable
     no-footer
@@ -17,14 +17,16 @@
       </template>
     </b-input-group>
     <div class="feedback">
-      <small v-if="copied" class="text-success mt-2 d-block"> Link kopiert! </small>
+      <small v-if="copied" class="text-success mt-2 d-block">
+        {{ t("shareDialog.linkCopied") }}
+      </small>
     </div>
 
     <hr />
 
     <b-button variant="outline-secondary" class="w-100" :disabled="exporting" @click="exportToPdf">
       <file-down :size="20" class="me-2" />
-      {{ exporting ? "Wird exportiert..." : "Als PDF exportieren" }}
+      {{ exporting ? t("shareDialog.exporting") : t("shareDialog.exportPdf") }}
     </b-button>
     <small v-if="exportError" class="text-danger mt-2 d-block">{{ exportError }}</small>
   </b-modal>
@@ -33,10 +35,12 @@
 <script setup lang="ts">
   import { BModal, BInputGroup, BFormInput, BButton } from "bootstrap-vue-next";
   import { computed, ref } from "vue";
+  import { useI18n } from "vue-i18n";
   import { Clipboard, FileDown } from "lucide-vue-next";
   import { useViewStore } from "@/stores/viewStore";
   import { usePdfExport } from "@/composables/usePdfExport";
 
+  const { t } = useI18n();
   const viewStore = useViewStore();
 
   const url = computed(() => viewStore.shareUrl);

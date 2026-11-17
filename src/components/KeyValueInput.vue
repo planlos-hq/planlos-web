@@ -3,7 +3,7 @@
     <b-form-textarea
       id="input"
       type="text"
-      placeholder="Name"
+      :placeholder="t('common.name')"
       v-model="key"
       required
       class="pb-0"
@@ -11,7 +11,7 @@
     <b-form-textarea
       id="input"
       type="text"
-      placeholder="Wert"
+      :placeholder="t('common.value')"
       v-model="value"
       required
       class="pb-0"
@@ -22,8 +22,10 @@
 
 <script setup lang="ts">
   import { BFormTextarea } from "bootstrap-vue-next";
+  import { useI18n } from "vue-i18n";
   import DeleteButton from "./IconButtons/DeleteButton.vue";
 
+  const { t } = useI18n();
   const key = defineModel<string>("name");
   const value = defineModel<string>("value");
   defineEmits<{

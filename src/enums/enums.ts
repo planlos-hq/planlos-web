@@ -35,16 +35,12 @@ export enum LecturerKind {
   ADJUNCT_PROFESOR = "adjunct_professor",
 }
 
-export function mapLecturerKindToString(value: LecturerKind) {
-  switch (value) {
-    case LecturerKind.LAB_ENGINEER:
-      return "Laboringenieur";
-    case LecturerKind.ADJUNCT_PROFESOR:
-      return "Lehrbeauftragter";
-    case LecturerKind.REGULAR:
-      return "Lehrperson";
-  }
-}
+/** Zuordnung der Lehrpersonen-Art zu den i18n-Keys der Anzeigetexte. */
+export const lecturerKindKey: Record<LecturerKind, string> = {
+  [LecturerKind.REGULAR]: "lecturerKind.regular",
+  [LecturerKind.LAB_ENGINEER]: "lecturerKind.labEngineer",
+  [LecturerKind.ADJUNCT_PROFESOR]: "lecturerKind.adjunctProfessor",
+};
 
 /**
  * Fehlercodes, die angezeigt werden, wenn keine Verbindung zum Server möglich ist.
