@@ -198,4 +198,5 @@ export async function reloadAllData() {
   await conflictStore.loadResourceConflicts();
   await conflictStore.loadIgnoredResourceConflicts();
   await conflictStore.loadCourseLecturerViolations();
+  await conflictStore.loadLecturerTimeViolations();
 }

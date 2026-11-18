@@ -1,0 +1,15 @@
+export default {
+  title: "Nicht verfügbare Zeiten",
+  none: "keine",
+  soft: "Möglichst nicht",
+  hard: "Nicht verfügbar",
+  softHint: "nur wenn nötig",
+  hardHint: "nie einplanen",
+  dragHint: "Auf einen Block im Kalender ziehen",
+  kind: "Art der Sperre",
+  day: "Tag:",
+  time: "Zeit:",
+  remove: "Zeitraum entfernen",
+  loadFailed: "Nicht verfügbare Zeiten konnten nicht geladen werden.",
+  saveFailed: "Nicht verfügbare Zeiten konnten nicht gespeichert werden.",
+};

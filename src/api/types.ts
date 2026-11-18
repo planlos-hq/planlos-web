@@ -62,6 +62,28 @@ export type CourseColorAssignment = {
   course: number;
 };
 
+export type LecturerTimeConstraintApiData = {
+  id: number;
+  lecturer: number;
+  weekday: number;
+  at: string;
+  duration: string;
+  soft: boolean;
+};
+
+export type LecturerTimeViolationApiData = {
+  constraint_id: number;
+  lecturer_id: number;
+  soft: boolean;
+  time_slot_id: number;
+  course_id: number;
+};
+
+export type IgnoredLecturerTimeViolationApiData = {
+  constraint_id: number;
+  time_slot_id: number;
+};
+
 export type TimeSlotApiData = {
   id: number;
   course: number;

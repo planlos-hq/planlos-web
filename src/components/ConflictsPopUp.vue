@@ -64,9 +64,70 @@
 
     <div
       class="no-conflict-message"
-      v-if="conflictDisplay.length === 0 && labEngineerOnlyDisplay.length === 0"
+      v-if="
+        conflictDisplay.length === 0 &&
+        labEngineerOnlyDisplay.length === 0 &&
+        timeViolationDisplay.length === 0
+      "
     >
       {{ t("conflictsPopUp.none") }}
+    </div>
+
+    <div
+      v-for="violation in timeViolationDisplay"
+      :key="`time-${violation.constraintId}-${violation.timeSlotId}`"
+      class="mt-2 mb-1 p-3 border rounded d-flex justify-content-between align-items-center"
+    >
+      <div :class="{ 'opacity-50': !violation.active }">
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.course')">
+          <calendar :size="20" />
+          {{ violation.course }}
+        </div>
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.lecturer')">
+          <user :size="20" />
+          {{ violation.lecturer }}
+        </div>
+        <div class="d-flex align-items-center gap-2" :title="t('conflictsPopUp.hints.slotTime')">
+          <clock :size="20" />
+          {{ violation.time }}
+        </div>
+        <div
+          class="d-flex align-items-center gap-2"
+          :class="{ 'text-danger': !violation.soft }"
+          :title="t('conflictsPopUp.hints.unavailable')"
+        >
+          <calendar-x :size="20" />
+          {{ t(violation.soft ? "conflictsPopUp.timeSoft" : "conflictsPopUp.timeHard") }}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3">
+        <calendar-search-button
+          :size="32"
+          :ignored="!violation.active"
+          :title="t('conflictsPopUp.hints.showLecturerCalendar')"
+          @click="openTimeViolationView(violation.lecturerId, violation.timeSlotId)"
+        />
+
+        <b-form-checkbox
+          switch
+          :title="
+            t(violation.active ? 'conflictsPopUp.hints.ignore' : 'conflictsPopUp.hints.reactivate')
+          "
+          :model-value="violation.active"
+          @update:model-value="
+            () =>
+              conflictStore.setLecturerTimeViolationIgnored(
+                violation.constraintId,
+                violation.timeSlotId,
+                violation.active
+              )
+          "
+          size="lg"
+          class="opacity-100"
+        >
+        </b-form-checkbox>
+      </div>
     </div>
 
     <div
@@ -162,6 +223,7 @@
 <script setup lang="ts">
   import type {
     IgnoredResourceConflict,
+    LecturerTimeViolation,
     ResourceConflict,
     ResourceConflictDisplay,
     ResourceType,
@@ -174,7 +236,7 @@
   import { useI18n } from "vue-i18n";
   import SearchBar from "./SearchBar.vue";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
-  import { Calendar, Clock, FlaskConical, School, User, Users } from "lucide-vue-next";
+  import { Calendar, CalendarX, Clock, FlaskConical, School, User, Users } from "lucide-vue-next";
   import { useViewStore } from "@/stores/viewStore";
   import { LecturerKind } from "@/enums/enums";
 
@@ -269,6 +331,49 @@
     );
   });
 
+  // Termine in nicht verfügbaren Zeiten ihrer Lehrperson (Filter: Lehrperson)
+  const timeViolationDisplay = computed(() => {
+    if (selectedResourceType.value !== "" && selectedResourceType.value !== "lecturer") return [];
+
+    const display = (v: LecturerTimeViolation, active: boolean) => {
+      const course = courseStore.courseMap.get(v.courseId);
+      return {
+        ...v,
+        course: course !== undefined ? `${course.number}_${course.abbreviation}` : "-",
+        lecturer: conflictStore.getResourceDisplayString("lecturer", v.lecturerId),
+        time: getRelevantTimeFrame(v.timeSlotId, v.timeSlotId),
+        active,
+      };
+    };
+
+    const active = conflictStore.lecturerTimeViolations.map(v => display(v, true));
+    // ohne Fehlermeldung: Einschränkung oder Termin können gerade gelöscht worden sein
+    const ignored = conflictStore.ignoredLecturerTimeViolations.flatMap(i => {
+      const constraint = conflictStore.lecturerTimeConstraintMap.get(i.constraintId);
+      const courseId = timeSlotStore.timeSlotCourseAssignmentsMap.get(i.timeSlotId);
+      if (constraint === undefined || courseId === undefined) return [];
+      return [
+        display({ ...i, lecturerId: constraint.lecturer, courseId, soft: constraint.soft }, false),
+      ];
+    });
+
+    let violations;
+    if (selectedStatus.value === "active") {
+      violations = active;
+    } else if (selectedStatus.value === "ignored") {
+      violations = ignored;
+    } else {
+      violations = [...active, ...ignored];
+    }
+
+    return violations.filter(
+      v =>
+        query.value.length === 0 ||
+        v.course.toLowerCase().includes(query.value) ||
+        v.lecturer.toLowerCase().includes(query.value)
+    );
+  });
+
   function matchesQuery(conflict: ResourceConflictDisplay) {
     if (
       conflict.courseA.toLowerCase().includes(query.value) ||
@@ -349,6 +454,20 @@
     // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
     await nextTick();
     courseStore.highlightTimeSlots([conflict.slotA, conflict.slotB]);
+  }
+
+  /**
+   * Öffnet die Ansicht einer Lehrperson und lässt den Termin in ihrer nicht verfügbaren Zeit aufleuchten.
+   *
+   * @param lecturerId - ID der Lehrperson
+   * @param timeSlotId - ID des Termins
+   */
+  async function openTimeViolationView(lecturerId: number, timeSlotId: number) {
+    show.value = false;
+    await viewStore.openConflict("lecturer", lecturerId);
+    // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
+    await nextTick();
+    courseStore.highlightTimeSlots([timeSlotId]);
   }
 
   /**

@@ -23,7 +23,8 @@
           :size="28"
           :conflict-count="
             conflictStore.resourceConflictsList.length +
-            conflictStore.courseLecturerViolations.length
+            conflictStore.courseLecturerViolations.length +
+            conflictStore.lecturerTimeViolations.length
           "
           :title="t('sideBar.conflictsShow')"
         />

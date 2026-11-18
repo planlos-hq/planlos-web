@@ -32,6 +32,24 @@ function breakSlots() {
   return slots;
 }
 
+export type ClassSlot = {
+  /** Beginn in Minuten ab Mitternacht */
+  from: number;
+  /** Ende in Minuten ab Mitternacht */
+  to: number;
+};
+
+/**
+ * Generiert die Veranstaltungsblöcke zwischen den Pausen (08:00-09:30, 09:45-11:15, ...).
+ *
+ * @returns Array an Veranstaltungsblöcken
+ */
+export function classSlots() {
+  const slots: ClassSlot[] = [{ from: start, to: start + classDuration }];
+  breakSlots().forEach(b => slots.push({ from: b.to, to: b.to + classDuration }));
+  return slots;
+}
+
 export const specialHours = {
   mon: breakSlots(),
   tue: breakSlots(),

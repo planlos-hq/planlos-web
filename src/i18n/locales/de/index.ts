@@ -14,6 +14,7 @@ import resourceDialog from "./resourceDialog";
 import sideBar from "./sideBar";
 import eventOverview from "./eventOverview";
 import lecturerKind from "./lecturerKind";
+import timeConstraints from "./timeConstraints";
 
 export default {
   common,
@@ -32,4 +33,5 @@ export default {
   sideBar,
   eventOverview,
   lecturerKind,
+  timeConstraints,
 };

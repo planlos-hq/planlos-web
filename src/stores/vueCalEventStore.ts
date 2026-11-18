@@ -4,7 +4,7 @@ import { useCourseStore } from "./courseStore";
 import type { VueCalEvent } from "@/models/VueCalEvent";
 import type { Course } from "@/models/Course";
 import type { TimeSlot } from "@/models/TimeSlot";
-import type { ResourceConflict } from "@/models/ResourceConflict";
+import type { LecturerTimeViolation, ResourceConflict } from "@/models/ResourceConflict";
 import { Tab } from "@/enums/enums";
 import { useColorStore } from "./colorStore";
 import { useViewStore } from "./viewStore";
@@ -13,6 +13,7 @@ import { useStudyGroupStore } from "./studyGroupStore";
 
 const white = "#FFFFFF";
 const noConflicts: ResourceConflict[] = [];
+const noTimeViolations: LecturerTimeViolation[] = [];
 
 /**
  * Pinia Store, der die im Kalender angezeigten Events aus Kursen und Zeitslots ableitet.
@@ -54,6 +55,7 @@ export const useVueCalEventStore = defineStore("vueCalEvents", () => {
       studyGroupId,
       conflicts: conflictsStore.timeSlotConflictsMap.get(timeSlot.id) ?? noConflicts,
       labEngineerOnly: conflictsStore.labEngineerOnlyCourseIds.has(course.id),
+      timeViolations: conflictsStore.timeSlotTimeViolationsMap.get(timeSlot.id) ?? noTimeViolations,
     };
   }
 

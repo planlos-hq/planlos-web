@@ -91,12 +91,12 @@
         <p class="m-0">SWS:</p>
         <p class="m-0">{{ course?.sws || "---" }}</p>
       </b-list-group-item>
-      <b-list-group-item class="d-flex flex-row justify-content-evenly gap-3 align-items-center">
-        <p class="m-0 me-3 align-self-start">{{ t("eventOverview.time") }}</p>
-        <p class="m-0">{{ t("eventOverview.timeFrom") }}</p>
-        <b-input type="time" v-model="startTime" />
-        <p class="m-0">{{ t("eventOverview.timeTo") }}</p>
-        <b-input type="time" v-model="endTime" />
+      <b-list-group-item class="d-flex flex-row gap-2 align-items-center">
+        <p class="m-0 me-2 text-nowrap">{{ t("eventOverview.time") }}</p>
+        <p class="m-0 text-nowrap">{{ t("eventOverview.timeFrom") }}</p>
+        <b-input type="time" v-model="startTime" class="time-input" />
+        <p class="m-0 text-nowrap">{{ t("eventOverview.timeTo") }}</p>
+        <b-input type="time" v-model="endTime" class="time-input" />
       </b-list-group-item>
     </b-list-group>
     <add-color-dialog v-model="showAddColorDialog" />
@@ -364,6 +364,12 @@
 </script>
 
 <style scoped>
+  /* Uhrzeitfelder teilen sich den Platz, statt über den Rand zu ragen */
+  .time-input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
   .color-box {
     border-radius: 5px !important;
     display: block;

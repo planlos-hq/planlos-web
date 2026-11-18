@@ -178,11 +178,13 @@
       await resourceConflictStore.loadResourceConflicts();
       await resourceConflictStore.loadIgnoredResourceConflicts();
       await resourceConflictStore.loadCourseLecturerViolations();
+      await resourceConflictStore.loadLecturerTimeViolations();
     };
     // lädt alle Constraint Verletzungen in den Store
     await resourceConflictStore.loadResourceConflicts();
     await resourceConflictStore.loadIgnoredResourceConflicts();
     await resourceConflictStore.loadCourseLecturerViolations();
+    await resourceConflictStore.loadLecturerTimeViolations();
   }
 
   // Die App wird schon vor dem Datenabruf angezeigt, daher auf dessen Ende warten

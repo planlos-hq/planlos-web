@@ -29,6 +29,16 @@ export type CourseLecturerViolation = {
   labEngineerCount: number;
 };
 
+/** Termin, der in einer nicht verfügbaren Zeit seiner Lehrperson liegt */
+export type LecturerTimeViolation = {
+  constraintId: number;
+  timeSlotId: number;
+  lecturerId: number;
+  courseId: number;
+  /** true: Zeit möglichst meiden, false: nicht verfügbar */
+  soft: boolean;
+};
+
 export type ResourceConflictDisplay = {
   id: string;
   courseA: string;

@@ -1,4 +1,4 @@
-import type { ResourceConflict } from "./ResourceConflict";
+import type { LecturerTimeViolation, ResourceConflict } from "./ResourceConflict";
 
 export type VueCalEvent = {
   id: string;
@@ -17,4 +17,6 @@ export type VueCalEvent = {
   conflicts: ResourceConflict[];
   // Der Veranstaltung sind nur Laboringenieure zugewiesen (nicht ignoriert)
   labEngineerOnly: boolean;
+  // Termin liegt in einer nicht verfügbaren Zeit einer Lehrperson (nicht ignoriert)
+  timeViolations: LecturerTimeViolation[];
 };

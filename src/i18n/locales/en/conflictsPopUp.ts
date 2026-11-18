@@ -9,6 +9,8 @@ const en: typeof de = {
   none: "No conflicts",
   labEngineers:
     "Only one lab engineer, no other lecturer | Only {count} lab engineers, no other lecturer",
+  timeHard: "Scheduled at a time the lecturer is unavailable",
+  timeSoft: "Scheduled at a time the lecturer would rather avoid",
   hints: {
     allResources: "Show all resources",
     lecturer: "Lecturer",
@@ -25,6 +27,9 @@ const en: typeof de = {
     showLabEngineer: "Show the lab engineer's calendar",
     ignore: "Ignore conflict",
     reactivate: "Reactivate conflict",
+    slotTime: "Time of the slot",
+    unavailable: "Unavailable time of the lecturer (set in the lecturer dialog)",
+    showLecturerCalendar: "Show the lecturer's calendar",
   },
   errors: {
     title: "Error",
@@ -34,6 +39,7 @@ const en: typeof de = {
     loadLabEngineersFailed: "Courses with only lab engineers could not be loaded.",
     loadOneFailed: "Error while loading the conflict.",
     updateFailed: "An error occurred while updating the conflict.",
+    loadTimeFailed: "Slots at unavailable times could not be loaded.",
   },
 };
 

@@ -47,25 +47,31 @@
 
     <b-form @submit.prevent="handleSubmit">
       <b-form-group class="d-flex flex-column gap-2">
-        <form-input
-          v-for="object in activeConfig.attributes"
-          :key="object.key"
-          :disabled="false"
-          :type="object.type"
-          :placeholder="object.placeholder"
-          :required="object.required"
-          :options="object.options"
-          :is-item-selected="val => isItemSelected(val, formData[object.key] as any)"
-          @toggle="id => object.storeRead && toggleItem(id, object.key, object.storeRead)"
-          v-model="(formData as any)[object.key]"
-          @edit="object.onEdit"
-          @save="object.onSave"
-          :show-save-button="object.showSaveButton"
-        >
-          <template #listItem="{ item }">
-            {{ object.format ? object.format(item) : item }}
-          </template>
-        </form-input>
+        <template v-for="object in activeConfig.attributes" :key="object.key">
+          <!-- Nicht verfügbare Zeiten der Lehrperson stehen über "zur Planung aktiv" -->
+          <lecturer-time-constraints
+            v-if="selectedTab === Tab.LECTURER && object.key === 'isRelevant'"
+            ref="timeConstraints"
+            :lecturer-id="mode === 'edit' ? lecturerStore.selectedLecturer?.id : undefined"
+          />
+          <form-input
+            :disabled="false"
+            :type="object.type"
+            :placeholder="object.placeholder"
+            :required="object.required"
+            :options="object.options"
+            :is-item-selected="val => isItemSelected(val, formData[object.key] as any)"
+            @toggle="id => object.storeRead && toggleItem(id, object.key, object.storeRead)"
+            v-model="(formData as any)[object.key]"
+            @edit="object.onEdit"
+            @save="object.onSave"
+            :show-save-button="object.showSaveButton"
+          >
+            <template #listItem="{ item }">
+              {{ object.format ? object.format(item) : item }}
+            </template>
+          </form-input>
+        </template>
         <div>
           <extra-resource-data v-model="(formData as BaseResource).extraData" />
         </div>
@@ -149,6 +155,7 @@
   import { useViewStore } from "@/stores/viewStore";
   import type { StudyGroupTemplate } from "@/models/StudyGroupTemplate.ts";
   import TemplatePopUp from "./TemplatePopUp/TemplatePopUp.vue";
+  import LecturerTimeConstraints from "./LecturerTimeConstraints.vue";
 
   type BaseResource = {
     id: number;
@@ -202,6 +209,8 @@
   const title = computed(() => createTitle());
   const submitButton = useTemplateRef("submitButton");
   const modal = useTemplateRef("modal");
+  // Array, weil die Komponente in der v-for-Schleife der Felder steht
+  const timeConstraints = useTemplateRef("timeConstraints");
   const showDuplicateDialog = ref(false);
   const duplicateCourses = ref<Course[]>([]);
   const showTemplatePopUp = ref<boolean>(false);
@@ -598,6 +607,15 @@
             await syncCoursesForGroup(apiGroup.id, selectedCourses, []);
           }
           formData.value = {};
+        } else if (selectedTab.value === Tab.LECTURER) {
+          // Zeiten brauchen die ID der neuen Lehrperson
+          const lecturer = await lecturerStore.createLecturer(
+            formData.value as Omit<Lecturer, "id">
+          );
+          if (lecturer) {
+            await timeConstraints.value?.[0]?.save(lecturer.id);
+          }
+          formData.value = {};
         } else {
           create();
         }
@@ -605,6 +623,9 @@
       }
       case "edit": {
         update();
+        if (selectedTab.value === Tab.LECTURER && lecturerStore.selectedLecturer) {
+          await timeConstraints.value?.[0]?.save(lecturerStore.selectedLecturer.id);
+        }
         if (isStudyGroup && studyGroupStore.selectedStudyGroup) {
           const group = studyGroupStore.selectedStudyGroup;
           const previous = courseStore.coursesByStudyGroup(group.id);

@@ -14,6 +14,7 @@ import resourceDialog from "./resourceDialog";
 import sideBar from "./sideBar";
 import eventOverview from "./eventOverview";
 import lecturerKind from "./lecturerKind";
+import timeConstraints from "./timeConstraints";
 
 import type de from "../de";
 
@@ -34,6 +35,7 @@ const en: typeof de = {
   sideBar,
   eventOverview,
   lecturerKind,
+  timeConstraints,
 };
 
 export default en;

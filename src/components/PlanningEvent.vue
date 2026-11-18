@@ -38,6 +38,23 @@
         {{ t("planningEvent.labEngineerOnly") }}
       </div>
       <div
+        v-for="violation in event.timeViolations"
+        :key="`time-${violation.constraintId}`"
+        class="mt-1 mb-1 d-flex justify-content-between align-items-center super-small-text"
+      >
+        <div>
+          <calendar-x :size="20" />
+          {{ conflictStore.getResourceDisplayString("lecturer", violation.lecturerId) }}:
+          {{ t(violation.soft ? "timeConstraints.soft" : "timeConstraints.hard") }}
+        </div>
+        <calendar-search-button
+          :ignored="false"
+          :size="20"
+          @click="openLecturerView(violation.lecturerId)"
+          class="ms-2 me-2"
+        />
+      </div>
+      <div
         v-for="(conflict, index) in event.conflicts"
         :key="index"
         class="mt-1 mb-1 d-flex justify-content-between align-items-center super-small-text"
@@ -69,7 +86,7 @@
   import { useColor } from "@/composables/useColor";
   import { BPopover } from "bootstrap-vue-next";
   import ColorBox from "./ColorBox.vue";
-  import { FlaskConical, School, User, Users } from "lucide-vue-next";
+  import { CalendarX, FlaskConical, School, User, Users } from "lucide-vue-next";
   import { useResourceConflictStore } from "@/stores/resourceConflictsStore";
   import type { ResourceConflict } from "@/models/ResourceConflict";
   import { useViewStore } from "@/stores/viewStore";
@@ -102,7 +119,10 @@
   const course = computed(() => courseStore.courseMap.get(props.event.courseId));
 
   const hasConflict = computed(
-    () => props.event.conflicts.length > 0 || props.event.labEngineerOnly
+    () =>
+      props.event.conflicts.length > 0 ||
+      props.event.labEngineerOnly ||
+      props.event.timeViolations.length > 0
   );
 
   const details = computed(() => {
@@ -186,6 +206,18 @@
     // erst nach dem Rendern der neuen Termine, sonst verpassen sie das Aufleuchten
     await nextTick();
     courseStore.highlightTimeSlots([conflict.slotA, conflict.slotB]);
+  }
+
+  /**
+   * Öffnet die Ansicht der Lehrperson, in deren nicht verfügbarer Zeit der Termin liegt,
+   * und lässt den Termin aufleuchten.
+   *
+   * @param lecturerId - ID der Lehrperson
+   */
+  async function openLecturerView(lecturerId: number) {
+    await viewStore.openConflict("lecturer", lecturerId);
+    await nextTick();
+    courseStore.highlightTimeSlots([props.event.timeSlotId]);
   }
 </script>
 

@@ -3,9 +3,12 @@ import {
   getCourseLecturerViolationsApi,
   getConflictsForResourceApi,
   getIgnoredCourseLecturerViolationsApi,
+  getIgnoredLecturerTimeViolationsApi,
+  getLecturerTimeViolationsApi,
   getIgnoredResourceConflictsApi,
   ignoreResourceConflictApi,
   setCourseLecturerViolationIgnoredApi,
+  setLecturerTimeViolationIgnoredApi,
   unignoreResourceConflictApi,
 } from "@/api/resourceConflicts";
 import type {
@@ -13,6 +16,7 @@ import type {
   IgnoredResourceConflict,
   ResourceType,
   CourseLecturerViolation,
+  LecturerTimeViolation,
 } from "@/models/ResourceConflict";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
@@ -24,6 +28,8 @@ import {
   mapApiResourceConflict,
   mapIgnoredResourceConflictToApi,
 } from "@/api/util";
+import { listAllLecturerTimeConstraintsApi } from "@/api/lecturerTimeConstraint";
+import type { LecturerTimeConstraint } from "@/models/LecturerTimeConstraint";
 import { useLecturerStore } from "./lecturerStore";
 import { useRoomStore } from "./roomStore";
 import { useStudyGroupStore } from "./studyGroupStore";
@@ -54,6 +60,21 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
   const labEngineerOnlyCourseIds = computed(
     () => new Set(courseLecturerViolations.value.map(v => v.courseId))
   );
+
+  // Termine in nicht verfügbaren Zeiten ihrer Lehrperson (ohne ignorierte)
+  const lecturerTimeViolations = ref<LecturerTimeViolation[]>([]);
+  // Ignorierte Verstöße als Paar aus Einschränkung und Termin
+  const ignoredLecturerTimeViolations = ref<{ constraintId: number; timeSlotId: number }[]>([]);
+  // Alle nicht verfügbaren Zeiten, um ignorierte Verstöße anzeigen zu können
+  const lecturerTimeConstraintMap = ref(new Map<number, LecturerTimeConstraint>());
+  // Termine in nicht verfügbaren Zeiten je Termin-ID, für die Markierung im Kalender
+  const timeSlotTimeViolationsMap = computed(() => {
+    const map = new Map<number, LecturerTimeViolation[]>();
+    for (const v of lecturerTimeViolations.value) {
+      map.set(v.timeSlotId, [...(map.get(v.timeSlotId) ?? []), v]);
+    }
+    return map;
+  });
 
   const timeSlotConflictsMap = computed(() => {
     const map = new Map<number, ResourceConflict[]>();
@@ -177,6 +198,58 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     try {
       if (await setCourseLecturerViolationIgnoredApi(courseId, ignore)) {
         await loadCourseLecturerViolations();
+      }
+    } catch (error) {
+      handleError(error as Error, t("conflictsPopUp.errors.updateFailed"));
+    }
+  }
+
+  /**
+   * Lädt alle Termine in nicht verfügbaren Zeiten ihrer Lehrperson samt ignorierter in den Store
+   */
+  async function loadLecturerTimeViolations() {
+    try {
+      const [apiViolations, ignored, constraints] = await Promise.all([
+        getLecturerTimeViolationsApi(),
+        getIgnoredLecturerTimeViolationsApi(),
+        listAllLecturerTimeConstraintsApi(),
+      ]);
+      if (apiViolations === undefined || ignored === undefined) {
+        showError(t("conflictsPopUp.errors.title"), t("conflictsPopUp.errors.loadTimeFailed"));
+        return;
+      }
+      lecturerTimeViolations.value = apiViolations.map(v => ({
+        constraintId: v.constraint_id,
+        timeSlotId: v.time_slot_id,
+        lecturerId: v.lecturer_id,
+        courseId: v.course_id,
+        soft: v.soft,
+      }));
+      ignoredLecturerTimeViolations.value = ignored.map(i => ({
+        constraintId: i.constraint_id,
+        timeSlotId: i.time_slot_id,
+      }));
+      lecturerTimeConstraintMap.value = new Map(constraints.map(c => [c.id, c]));
+    } catch (error) {
+      handleError(error as Error, t("conflictsPopUp.errors.loadTimeFailed"));
+    }
+  }
+
+  /**
+   * Ignoriert einen Termin in einer nicht verfügbaren Zeit bzw. hebt das Ignorieren auf.
+   *
+   * @param constraintId - ID der Einschränkung
+   * @param timeSlotId - ID des Termins
+   * @param ignore - true: ignorieren, false: Ignorieren aufheben
+   */
+  async function setLecturerTimeViolationIgnored(
+    constraintId: number,
+    timeSlotId: number,
+    ignore: boolean
+  ) {
+    try {
+      if (await setLecturerTimeViolationIgnoredApi(constraintId, timeSlotId, ignore)) {
+        await loadLecturerTimeViolations();
       }
     } catch (error) {
       handleError(error as Error, t("conflictsPopUp.errors.updateFailed"));
@@ -420,6 +493,12 @@ export const useResourceConflictStore = defineStore("resourceConflicts", () => {
     loadIgnoredResourceConflicts,
     loadCourseLecturerViolations,
     setCourseLecturerViolationIgnored,
+    lecturerTimeViolations,
+    ignoredLecturerTimeViolations,
+    lecturerTimeConstraintMap,
+    timeSlotTimeViolationsMap,
+    loadLecturerTimeViolations,
+    setLecturerTimeViolationIgnored,
     ignoreConflict,
     unignoreConflict,
     addResourceConflictToMap,

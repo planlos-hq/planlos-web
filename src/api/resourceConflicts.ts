@@ -1,6 +1,8 @@
 import { useNotification } from "@/composables/useNotification";
 import type {
   CourseLecturerViolationApiData,
+  IgnoredLecturerTimeViolationApiData,
+  LecturerTimeViolationApiData,
   IgnoredResourceConflictApiData,
   ResourceConflictApiData,
 } from "./types";
@@ -277,4 +279,80 @@ export async function getIgnoredResourceConflictsApi() {
 
   const resourceConflicts: IgnoredResourceConflictApiData[] = await response.json();
   return resourceConflicts;
+}
+
+/**
+ * Lädt alle Termine, die in einer nicht verfügbaren Zeit ihrer Lehrperson liegen (ohne ignorierte).
+ *
+ * @returns alle Verstöße
+ */
+export async function getLecturerTimeViolationsApi() {
+  const response = await fetch(`${API_BASE_URL}/lecturer-time-constraint-violations`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return;
+  }
+
+  const violations: LecturerTimeViolationApiData[] = await response.json();
+  return violations;
+}
+
+/**
+ * Lädt alle ignorierten Verstöße gegen nicht verfügbare Zeiten.
+ *
+ * @returns Paare aus Einschränkung und Termin
+ */
+export async function getIgnoredLecturerTimeViolationsApi() {
+  const response = await fetch(`${API_BASE_URL}/lecturer-time-constraint-violations/ignored`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return;
+  }
+
+  const ignored: IgnoredLecturerTimeViolationApiData[] = await response.json();
+  return ignored;
+}
+
+/**
+ * Markiert bzw. entfernt einen Verstoß gegen eine nicht verfügbare Zeit als "ignoriert".
+ *
+ * @param constraintId - ID der Einschränkung
+ * @param timeSlotId - ID des Termins
+ * @param ignore - true: ignorieren, false: Ignorieren aufheben
+ * @returns true bei Erfolg
+ */
+export async function setLecturerTimeViolationIgnoredApi(
+  constraintId: number,
+  timeSlotId: number,
+  ignore: boolean
+) {
+  const response = await fetch(`${API_BASE_URL}/lecturer-time-constraint-violations/ignore`, {
+    method: ignore ? "POST" : "DELETE",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ constraint_id: constraintId, time_slot_id: timeSlotId }),
+  });
+
+  if (!response.ok) {
+    const { handleApiErrors } = useNotification();
+    await handleApiErrors(response);
+    return false;
+  }
+  return true;
 }

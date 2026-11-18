@@ -7,6 +7,8 @@ export default {
   none: "Keine Konflikte vorhanden",
   labEngineers:
     "Nur ein Laboringenieur, keine weitere Lehrperson | Nur {count} Laboringenieure, keine weitere Lehrperson",
+  timeHard: "Termin in nicht verfügbarer Zeit der Lehrperson",
+  timeSoft: "Termin in einer Zeit, die die Lehrperson möglichst meiden möchte",
   hints: {
     allResources: "Alle Ressourcen anzeigen",
     lecturer: "Lehrperson",
@@ -23,6 +25,9 @@ export default {
     showLabEngineer: "Kalender des Laboringenieurs anzeigen",
     ignore: "Konflikt ignorieren",
     reactivate: "Konflikt wieder aktivieren",
+    slotTime: "Zeit des Termins",
+    unavailable: "Nicht verfügbare Zeit der Lehrperson (im Lehrperson-Dialog festgelegt)",
+    showLecturerCalendar: "Kalender der Lehrperson anzeigen",
   },
   errors: {
     title: "Fehler",
@@ -32,5 +37,6 @@ export default {
     loadLabEngineersFailed: "Veranstaltungen nur mit Laboringenieur konnten nicht geladen werden.",
     loadOneFailed: "Fehler beim Laden des Konflikts.",
     updateFailed: "Ein Fehler ist bei der Bearbeitung des Konflikts aufgetreten.",
+    loadTimeFailed: "Termine in nicht verfügbaren Zeiten konnten nicht geladen werden.",
   },
 };

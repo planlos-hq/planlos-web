@@ -44,7 +44,7 @@ export const useLecturerStore = defineStore("lecturers", () => {
     const { firstName, lastName, abbreviation, notes, kind, isRelevant, extraData } = data;
 
     try {
-      await createLecturerApi(
+      const lecturer = await createLecturerApi(
         firstName,
         lastName,
         kind,
@@ -54,6 +54,7 @@ export const useLecturerStore = defineStore("lecturers", () => {
         extraData
       );
       showSuccess("Dozent erfolgreich hinzugefügt!");
+      return lecturer;
     } catch (error) {
       const e = error as Error;
       handleError(e, "Fehler beim Erstellen eines Dozenten.");
