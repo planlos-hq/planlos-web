@@ -26,7 +26,7 @@
     </template>
     <div class="d-flex flex-column">
       <p class="m-0 p-0 small-text">{{ event.title }}</p>
-      <p class="p-0 m-0 small-text">{{ formatTime(event.start) }} - {{ formatTime(event.end) }}</p>
+      <p class="p-0 m-0 small-text">{{ formatDate(event.start) }} - {{ formatDate(event.end) }}</p>
       <div v-if="course?.color" class="d-flex flex-row gap-2 align-items-center">
         <color-box :hex="course.color.hex" :button="false" :size="15" />
         <p class="m-0 p-0 small-text">{{ course.color.name }}</p>
@@ -84,6 +84,7 @@
   import { useI18n } from "vue-i18n";
   import { Tab } from "@/enums/enums";
   import { useColor } from "@/composables/useColor";
+  import { useTimeFormat } from "@/composables/useTimeFormat";
   import { BPopover } from "bootstrap-vue-next";
   import ColorBox from "./ColorBox.vue";
   import { CalendarX, FlaskConical, School, User, Users } from "lucide-vue-next";
@@ -98,6 +99,8 @@
   const viewStore = useViewStore();
   const { calculateFontColor } = useColor();
   const { t } = useI18n();
+  // Uhrzeiten im Format der Sprache (de: 13:30, en: 1:30 PM)
+  const { formatDate } = useTimeFormat();
 
   const black = "#000000";
 
@@ -182,18 +185,6 @@
     const bg = props.event.backgroundColor ?? black;
     return `color-mix(in srgb, ${bg}, ${calculateFontColor(bg)} 45%)`;
   });
-
-  /**
-   * Formatiert ein Datum zu Stunden und Minuten im deutschen Format.
-   * @param date - Das zu formatierende Datum
-   * @returns formatiertes Zeit-String, z.B. "14:30"
-   */
-  function formatTime(date: Date) {
-    return date.toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
 
   /**
    * Öffnet im aktuellen Tab die Ansicht der spezifischen Ressource, die

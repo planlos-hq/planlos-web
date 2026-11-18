@@ -48,6 +48,7 @@
             :key="vueCalLocale"
             v-bind="calendarConfig"
             :locale="vueCalLocale"
+            :twelve-hour="twelveHour"
             :events="calendarEvents"
             :hide-weekdays="viewStore.hiddenWeekdays"
             :special-hours="specialHours"
@@ -73,13 +74,13 @@
               >
                 <template #target>
                   <div class="block-content" @click.stop="openOverview(event.key)">
-                    {{ event._.startTimeFormatted24 }} - {{ event._.endTimeFormatted24 }}
+                    {{ formatDate(event.start) }} - {{ formatDate(event.end) }}
                   </div>
                 </template>
                 <div class="d-flex flex-column">
                   <p class="m-0 p-0 small-text">{{ t(`weekdays.${dayKey(event.start)}.long`) }}</p>
                   <p class="m-0 p-0 small-text">
-                    {{ event._.startTimeFormatted24 }} - {{ event._.endTimeFormatted24 }}
+                    {{ formatDate(event.start) }} - {{ formatDate(event.end) }}
                   </p>
                   <div class="d-flex flex-row gap-2 align-items-center">
                     <color-box :hex="kindOf(event.soft).hex" :button="false" :size="15" />
@@ -140,18 +141,16 @@
         <b-list-group-item :key="timeInputKey" class="d-flex flex-row gap-2 align-items-center">
           <p class="m-0 me-2 text-nowrap">{{ t("timeConstraints.time") }}</p>
           <p class="m-0 text-nowrap">{{ t("eventOverview.timeFrom") }}</p>
-          <b-input
-            type="time"
+          <time-input
             class="time-input"
-            :model-value="formatTime(selected.from)"
-            @change="(e: Event) => setTime('from', (e.target as HTMLInputElement).value)"
+            :model-value="toTimeValue(selected.from)"
+            @change="value => setTime('from', value)"
           />
           <p class="m-0 text-nowrap">{{ t("eventOverview.timeTo") }}</p>
-          <b-input
-            type="time"
+          <time-input
             class="time-input"
-            :model-value="formatTime(selected.to)"
-            @change="(e: Event) => setTime('to', (e.target as HTMLInputElement).value)"
+            :model-value="toTimeValue(selected.to)"
+            @change="value => setTime('to', value)"
           />
         </b-list-group-item>
       </b-list-group>
@@ -162,24 +161,19 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from "vue";
   import { useI18n } from "vue-i18n";
-  import {
-    BButton,
-    BInput,
-    BListGroup,
-    BListGroupItem,
-    BModal,
-    BPopover,
-  } from "bootstrap-vue-next";
+  import { BButton, BListGroup, BListGroupItem, BModal, BPopover } from "bootstrap-vue-next";
   import { CalendarCheck, CalendarX } from "lucide-vue-next";
   import { VueCal } from "vue-cal";
   import "vue-cal/style";
   import ColorBox from "./ColorBox.vue";
+  import TimeInput from "./TimeInput.vue";
   import {
     createLecturerTimeConstraintApi,
     deleteLecturerTimeConstraintApi,
     listLecturerTimeConstraintsApi,
   } from "@/api/lecturerTimeConstraint";
   import { useNotification } from "@/composables/useNotification";
+  import { toTimeValue, useTimeFormat } from "@/composables/useTimeFormat";
   import { weekdays } from "@/composables/useViewFilters";
   import type { LecturerTimeConstraint } from "@/models/LecturerTimeConstraint";
   import { useViewStore } from "@/stores/viewStore";
@@ -262,16 +256,13 @@
   const minDuration = 15;
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   const snap = (minutes: number) => Math.round(minutes / 15) * 15;
-  /** "HH:MM"; Mitternacht als "00:00" wie im Planungskalender */
-  const formatTime = (minutes: number) =>
-    `${Math.floor((minutes % (24 * 60)) / 60)
-      .toString()
-      .padStart(2, "0")}:${(minutes % 60).toString().padStart(2, "0")}`;
+  // Anzeige im Format der Sprache (de: 13:30, en: 1:30 PM), Mitternacht als 00:00 bzw. 12:00 AM
+  const { twelveHour, formatDate, formatMinutes } = useTimeFormat();
   /** i18n-Key des Wochentags (0 = Sonntag wie Date.getDay()) */
   const weekdayKey = (weekday: number) => weekdays[(weekday + 6) % 7]?.key ?? "monday";
   const dayKey = (date: Date) => weekdayKey(date.getDay());
   const blockTitle = (b: Block) =>
-    `${t(`weekdays.${weekdayKey(b.weekday)}.long`)} ${formatTime(b.from)} - ${formatTime(b.to)}`;
+    `${t(`weekdays.${weekdayKey(b.weekday)}.long`)} ${formatMinutes(b.from)} - ${formatMinutes(b.to)}`;
 
   /** Zeiträume für das Feld im Dialog, nach Tag (Montag zuerst) und Uhrzeit sortiert */
   const summary = computed(() =>
@@ -280,7 +271,7 @@
       .map(b => ({
         key: b.key,
         soft: b.soft,
-        label: `${t(`weekdays.${weekdayKey(b.weekday)}.short`)} ${formatTime(b.from)}-${formatTime(b.to)}`,
+        label: `${t(`weekdays.${weekdayKey(b.weekday)}.short`)} ${formatMinutes(b.from)}-${formatMinutes(b.to)}`,
       }))
   );
 

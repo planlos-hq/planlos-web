@@ -234,6 +234,7 @@
   import { BModal, BFormCheckbox, BButtonGroup, BButton } from "bootstrap-vue-next";
   import { computed, nextTick, ref, type ComputedRef } from "vue";
   import { useI18n } from "vue-i18n";
+  import { useTimeFormat } from "@/composables/useTimeFormat";
   import SearchBar from "./SearchBar.vue";
   import CalendarSearchButton from "./IconButtons/CalendarSearchButton.vue";
   import { Calendar, CalendarX, Clock, FlaskConical, School, User, Users } from "lucide-vue-next";
@@ -241,6 +242,7 @@
   import { LecturerKind } from "@/enums/enums";
 
   const { t, locale } = useI18n();
+  const { formatDate } = useTimeFormat();
   const conflictStore = useResourceConflictStore();
   const timeSlotStore = useTimeSlotStore();
   const courseStore = useCourseStore();
@@ -441,7 +443,7 @@
     if (timeSlotA === undefined || timeSlotB === undefined) return "-";
     const start = new Date(Math.max(timeSlotA.start.getTime(), timeSlotB.start.getTime()));
     const end = new Date(Math.min(timeSlotA.end.getTime(), timeSlotB.end.getTime()));
-    return `${start.toLocaleDateString(locale.value, { weekday: "long" })} ${start.getHours().toString().padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")} - ${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`;
+    return `${start.toLocaleDateString(locale.value, { weekday: "long" })} ${formatDate(start)} - ${formatDate(end)}`;
   }
 
   function searchConflicts(searchText: string) {

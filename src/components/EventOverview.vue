@@ -94,9 +94,9 @@
       <b-list-group-item class="d-flex flex-row gap-2 align-items-center">
         <p class="m-0 me-2 text-nowrap">{{ t("eventOverview.time") }}</p>
         <p class="m-0 text-nowrap">{{ t("eventOverview.timeFrom") }}</p>
-        <b-input type="time" v-model="startTime" class="time-input" />
+        <time-input v-model="startTime" class="time-input" />
         <p class="m-0 text-nowrap">{{ t("eventOverview.timeTo") }}</p>
-        <b-input type="time" v-model="endTime" class="time-input" />
+        <time-input v-model="endTime" class="time-input" />
       </b-list-group-item>
     </b-list-group>
     <add-color-dialog v-model="showAddColorDialog" />
@@ -110,7 +110,8 @@
 </template>
 
 <script setup lang="ts">
-  import { BModal, BListGroup, BListGroupItem, BButton, BInput } from "bootstrap-vue-next";
+  import { BModal, BListGroup, BListGroupItem, BButton } from "bootstrap-vue-next";
+  import TimeInput from "./TimeInput.vue";
   import { useColorStore } from "@/stores/colorStore";
   import type { Color } from "@/models/Color";
   import type { VueCalEvent } from "@/models/VueCalEvent";
