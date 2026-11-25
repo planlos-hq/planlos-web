@@ -21,7 +21,7 @@
     </button>
     <label for="time-constraints">{{ t("timeConstraints.title") }}</label>
 
-    <b-modal v-model="show" :title="t('timeConstraints.title')" size="lg" no-footer lazy>
+    <b-modal v-model="show" :title="t('timeConstraints.title')" size="xl" no-footer lazy>
       <div class="d-flex gap-3">
         <!-- wie die Veranstaltungsliste in der Seitenleiste: Karten in den Kalender ziehen -->
         <div class="palette d-flex flex-column gap-1">
@@ -209,7 +209,7 @@
     ...timetableConfig,
     style: "",
     timeStep: 60,
-    timeCellHeight: 26,
+    timeCellHeight: 40,
     editableEvents: { create: false, drag: true, resize: true, delete: false },
   };
 
@@ -459,7 +459,7 @@
   .mini-calendar {
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    height: 450px;
+    height: min(75vh, 700px);
     overflow: hidden;
   }
 
@@ -467,7 +467,7 @@
   .mini-calendar :deep(.vuecal__event) {
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
 
   /* stylelint-disable-next-line selector-class-pattern -- Klassen von vue-cal */
@@ -488,7 +488,7 @@
   }
 
   .palette {
-    flex: 0 0 170px;
+    flex: 0 0 200px;
   }
 
   /* wie die Karten der Veranstaltungsliste; Farbe nur als Hinweis am linken Rand */
